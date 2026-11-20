@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiftyAI — Premium Personalized Gift Experience</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
+        
+        /* Premium custom scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
+
+        /* Custom active state classes */
+        .active-pill { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border-color: #6366f1; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3); }
+        .active-nav { color: #818cf8; position: relative; }
+        .active-nav::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; h: 2px; background: #818cf8; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-50 selection:text-indigo-900">
+
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <header class="bg-[#0f172a]/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+            <div onclick="switchView('finder')" class="flex items-center gap-2.5 font-extrabold text-2xl tracking-tight cursor-pointer group">
+                <div class="bg-indigo-600 p-2 rounded-xl group-hover:rotate-12 transition duration-300">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white fill-indigo-200"></i>
+                </div>
+                <span class="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Gifty<span class="text-indigo-400">AI</span></span>
+            </div>
+            
+            <nav class="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <button onclick="switchView('finder')" id="nav-finder" class="active-nav transition duration-200">AI Recommendation Engine</button>
+                <button onclick="switchView('trending')" id="nav-trending" class="hover:text-slate-200 transition duration-200">Trending Deals</button>
+                <button onclick="switchView('learning')" id="nav-learning" class="hover:text-slate-200 transition duration-200">How It Learns</button>
+            </nav>
+
+            <div class="flex items-center gap-4">
+                <button onclick="toggleCartDrawer(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 active:scale-95">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    <span>Cart</span>
+                    <span id="cartCountBadge" class="hidden bg-white text-indigo-600 rounded-full px-1.5 py-0.5 text-[10px] font-black">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="cartDrawer" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden transition duration-300" onclick="if(event.target === this) toggleCartDrawer(false)">
+        <div class="absolute right-0 top-0 bottom-0 max-w-md w-full bg-[#0f172a] border-l border-slate-800 shadow-2xl p-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between border-b border-slate-800/60 pb-4 mb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="text-indigo-400 w-5 h-5"></i>
+                        <h2 class="text-lg font-bold text-white">Your Curated Collection</h2>
+                    </div>
+                    <button onclick="toggleCartDrawer(false)" class="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-800/40 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="cartItemsList" class="space-y-3 overflow-y-auto max-h-[65vh] pr-1">
+                    </div>
+            </div>
+            <div class="border-t border-slate-800/80 pt-4">
+                <div class="flex justify-between text-base font-bold text-slate-300 mb-4">
+                    <span>Estimated Investment:</span>
+                    <span id="cartTotalSum" class="text-indigo-400 text-xl font-extrabold">$0.00</span>
+                </div>
+                <button onclick="alert('Proceeding to check out... Everything is working perfectly!')" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-500/10">
+                    Secure Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 relative z-10">
+        
+        <div id="view-finder" class="view-section transition duration-300">
+            <section class="text-center max-w-2xl mx-auto mb-16">
+                <span class="inline-flex items-center gap-1.5 bg-indigo-500/10 text-indigo-300 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-widest border border-indigo-500/20 mb-4 animate-pulse">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5"></i> Neural-Link Gifting Activated
+                </span>
+                <h1 class="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                    The Ultimate Gift Finder, <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Perfected by AI.</span>
+                </h1>
+                <p class="text-slate-400 mt-4 text-sm sm:text-base max-w-xl mx-auto">
+                    Configure your parameters below. Our machine learning fallback matrix guarantees matching physical inventory products with verified high-satisfaction ratings.
+                </p>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <aside class="lg:col-span-4 bg-[#0f172a]/60 border border-slate-800/80 p-6 sm:p-8 rounded-3xl backdrop-blur-md shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-5 mb-6">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sliders" class="text-indigo-400 w-4 h-4"></i>
+                            <h2 class="font-bold text-sm uppercase tracking-wider text-slate-300">Engine Parameters</h2>
+                        </div>
+                        <button id="resetFilters" class="text-xs text-indigo-400 hover:text-indigo-300 transition font-medium">Reset Matrix</button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">1. Target Recipient</label>
+                            <div class="grid grid-cols-2 gap-2" id="ageGroupContainer">
+                                <button data-age="kids" class="age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition">👶 Kids</button>
+                                <button data-age="teens" class="age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition">⚡ Teens</button>
+                                <button data-age="adults" class="age-btn active-pill p-3 rounded-xl text-left text-xs transition">💼 Adults</button>
+                                <button data-age="seniors" class="age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition">🧓 Seniors</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">2. Event Context</label>
+                            <div class="relative">
+                                <select id="occasionField" class="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer appearance-none">
+                                    <option value="all">🎉 General / Any Event</option>
+                                    <option value="birthday" selected>🎂 Birthday Celebration</option>
+                                    <option value="anniversary">💖 Romance & Anniversary</option>
+                                    <option value="graduation">🎓 Graduation & Career</option>
+                                    <option value="holiday">🎄 Seasonal Holidays</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-4 top-3.5 text-slate-500 w-4 h-4 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-[11px] font-bold uppercase tracking-widest text-slate-400">3. Maximum Price Ceiling</label>
+                                <span id="priceLabel" class="text-indigo-400 font-black text-xs bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">$150 Max</span>
+                            </div>
+                            <input id="budgetSlider" type="range" min="20" max="400" value="150" step="5" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1 font-mono">
+                                <span>$20</span>
+                                <span>$210</span>
+                                <span>$400</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">4. Core Interest Map Alignment</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="cpu" class="w-4 h-4 text-slate-500"></i><span>Tech & Gadgets</span></div>
+                                    <input type="checkbox" name="interestTag" value="tech" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="palette" class="w-4 h-4 text-slate-500"></i><span>Art & Creative Crafts</span></div>
+                                    <input type="checkbox" name="interestTag" value="creative" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="dumbbell" class="w-4 h-4 text-slate-500"></i><span>Fitness & Outdoors</span></div>
+                                    <input type="checkbox" name="interestTag" value="fitness" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="coffee" class="w-4 h-4 text-slate-500"></i><span>Home Comforts & Foodie</span></div>
+                                    <input type="checkbox" name="interestTag" value="home" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="lg:col-span-8 flex flex-col gap-6">
+                    <div class="bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between backdrop-blur-md">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-emerald-500/10 text-emerald-400 p-2 rounded-xl border border-emerald-500/20"><i data-lucide="activity" class="w-4 h-4"></i></div>
+                            <div>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Optimization Summary</p>
+                                <h3 id="catalogSummary" class="text-xs font-semibold text-slate-300">Analyzing criteria matrix values...</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        </div>
+                </section>
+            </div>
+        </div>
+
+        <div id="view-trending" class="view-section hidden transition duration-300">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-12">
+                    <span class="bg-amber-500/10 text-amber-300 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20">🔥 Velocity Top Scorers</span>
+                    <h2 class="text-3xl font-black text-white tracking-tight mt-2">Trending High Performance Gift Matrix</h2>
+                    <p class="text-slate-400 text-sm mt-1">Verified global consumer purchase arrays reaching high performance score weights (>4.7 stars).</p>
+                </div>
+                <div id="trendingGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    </div>
+            </div>
+        </div>
+
+        <div id="view-learning" class="view-section hidden transition duration-300">
+            <div class="max-w-3xl mx-auto bg-[#0f172a]/60 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-md shadow-2xl">
+                <div class="flex items-center gap-4 border-b border-slate-800/80 pb-6 mb-6">
+                    <div class="bg-indigo-500/10 p-3 rounded-2xl text-indigo-400 border border-indigo-500/20"><i data-lucide="brain-circuit" class="w-6 h-6 animate-pulse"></i></div>
+                    <div>
+                        <h2 class="text-xl font-extrabold text-white">Algorithmic Preference Weights Execution Engine</h2>
+                        <p class="text-xs text-slate-400 font-medium">How calculations sort data inputs strictly inside hard ceiling limits</p>
+                    </div>
+                </div>
+                <div class="space-y-6 text-xs text-slate-400 leading-relaxed font-medium">
+                    <div class="bg-slate-900/40 border border-slate-800/40 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>Step 1: Demographic Cluster Intersect</h3>
+                        <p>Our sorting engine identifies aging taxonomy groups (Kids, Teens, Adults, Seniors) to map generational utility coefficients.</p>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800/40 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>Step 2: Hard ceiling budget filter block</h3>
+                        <p>Calculations enforce a strict budget limit. If any element matching code structures costs more than your choice, it is blocked from rendering.</p>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800/40 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-pink-400"></span>Step 3: Elastic resilient graceful fallback</h3>
+                        <p>If strict criteria return zero products, the algorithm adapts. It relaxes lower-priority context filters (like occasion tags) while maintaining your price ceiling to keep relevant choices visible.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/10 flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 z-50 text-xs font-bold border border-indigo-400/20">
+        <i data-lucide="check" class="w-4 h-4 bg-white/20 p-0.5 rounded-md"></i>
+        <span id="toastMessage">Secure index payload saved!</span>
+    </div>
+
+    <script>
+        // High Quality Extended Dynamic Seed Catalog Data Store 
+        const masterProducts = [
+            { id: 101, title: "STEM Interactive Smart Programming Robot Kit", price: 135, age: "kids", occasion: "birthday", interests: ["tech"], rating: 4.8, reviews: 348, img: "https://images.unsplash.com/photo-1531693251400-38df35776dc7?auto=format&fit=crop&w=500&q=80" },
+            { id: 102, title: "Kids Professional 48-Piece Studio Art Watercolor Set", price: 25, age: "kids", occasion: "holiday", interests: ["creative"], rating: 4.7, reviews: 92, img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=500&q=80" },
+            { id: 103, title: "Adjustable High-Precision Inline Roller Skates", price: 65, age: "kids", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 114, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=500&q=80" },
+            { id: 104, title: "Plush Organic Soft-Glow Ambient Nursery Light", price: 30, age: "kids", occasion: "holiday", interests: ["home"], rating: 4.8, reviews: 56, img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" },
+            { id: 201, title: "Smart RGB Wireless Bedside Audio Cube Speaker", price: 45, age: "teens", occasion: "birthday", interests: ["tech", "home"], rating: 4.5, reviews: 204, img: "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=500&q=80" },
+            { id: 202, title: "4K GPS Dual-Camera Ultra-Stable Drone Kit", price: 199, age: "teens", occasion: "graduation", interests: ["tech"], rating: 4.8, reviews: 1120, img: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=500&q=80" },
+            { id: 203, title: "Wacom Intuos Graphic Novel Drawing Digital Tablet", price: 85, age: "teens", occasion: "graduation", interests: ["creative"], rating: 4.7, reviews: 430, img: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?auto=format&fit=crop&w=500&q=80" },
+            { id: 204, title: "Pro Tactical Hydration Travel Backpack Outpost", price: 55, age: "teens", occasion: "holiday", interests: ["fitness"], rating: 4.4, reviews: 88, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80" },
+            { id: 301, title: "Premium CNC Aluminum Gasket Mechanical Keyboard", price: 140, age: "adults", occasion: "birthday", interests: ["tech", "creative"], rating: 4.9, reviews: 1840, img: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=500&q=80" },
+            { id: 302, title: "Hand-Stitched Full Grain Refillable Leather Journal Set", price: 38, age: "adults", occasion: "anniversary", interests: ["creative", "home"], rating: 4.8, reviews: 624, img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 303, title: "High-Density Eco Natural Tree Rubber Yoga Mat", price: 65, age: "adults", occasion: "birthday", interests: ["fitness"], rating: 4.7, reviews: 210, img: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&w=500&q=80" },
+            { id: 304, title: "Artisan Ceramic Espresso Dripper & Mino Ware Pot Set", price: 52, age: "adults", occasion: "anniversary", interests: ["home"], rating: 4.9, reviews: 84, img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
+            { id: 305, title: "Sony Noise Cancelling Over-Ear Smart Headphones", price: 299, age: "adults", occasion: "graduation", interests: ["tech"], rating: 4.6, reviews: 14210, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80" },
+            { id: 306, title: "Pro Multi-Loop Heavy Duty Resistance Band Station", price: 110, age: "adults", occasion: "holiday", interests: ["fitness"], rating: 4.6, reviews: 312, img: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=500&q=80" },
+            { id: 401, title: "Theragun Percussion Deep Tissue Massage Pulse Gun", price: 180, age: "seniors", occasion: "anniversary", interests: ["fitness", "home"], rating: 4.6, reviews: 791, img: "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=500&q=80" },
+            { id: 402, title: "Handcrafted Luxury Hardwood Vintage Fountain Pen Set", price: 75, age: "seniors", occasion: "graduation", interests: ["creative"], rating: 4.9, reviews: 104, img: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=500&q=80" },
+            { id: 403, title: "Smart Automated Medical Pill Dispenser Hub Station", price: 125, age: "seniors", occasion: "holiday", interests: ["tech"], rating: 4.7, reviews: 90, img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" },
+            { id: 404, title: "Luxury Ultra-Soft Calming Weighted Organic Quilt", price: 160, age: "seniors", occasion: "anniversary", interests: ["home"], rating: 4.9, reviews: 418, img: "https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?auto=format&fit=crop&w=500&q=80" },
+            { id: 501, title: "Pocket Portable Mini Titanium Multi-Tool EDC", price: 18, age: "adults", occasion: "holiday", interests: ["tech", "fitness"], rating: 4.4, reviews: 89, img: "https://images.unsplash.com/photo-1532634922-8fe0b757fb13?auto=format&fit=crop&w=500&q=80" },
+            { id: 502, title: "Compact Clip-On Eye-Care LED Reading Book Light", price: 15, age: "teens", occasion: "birthday", interests: ["home", "tech"], rating: 4.5, reviews: 110, img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" }
+        ];
+
+        let targetAge = "adults";
+        let cartArray = [];
+
+        // Single Page Active Section View Switching Router Controller
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            // Map design anchor status links
+            ['finder', 'trending', 'learning'].forEach(name => {
+                const linkElement = document.getElementById(`nav-${name}`);
+                if(linkElement) {
+                    if(name === viewName) linkElement.className = "active-nav transition duration-200 cursor-pointer text-indigo-400";
+                    else linkElement.className = "hover:text-slate-200 transition duration-200 cursor-pointer text-slate-400";
+                }
+            });
+
+            if (viewName === 'trending') renderTrendingViewGrid();
+        }
+
+        // Live Calculating Pass Filter Engine Logic
+        function triggerEvaluation() {
+            const activeCeilingPrice = parseFloat(document.getElementById('budgetSlider').value);
+            const activeOccasion = document.getElementById('occasionField').value;
+            const chosenTags = Array.from(document.querySelectorAll('input[name="interestTag"]:checked')).map(cb => cb.value);
+
+            // Level 1: Strict Check Intersect Parameter Arrays
+            let dataPassResults = masterProducts.filter(item => {
+                return item.age === targetAge && 
+                       item.price <= activeCeilingPrice && 
+                       (activeOccasion === 'all' || item.occasion === activeOccasion) &&
+                       (chosenTags.length === 0 || item.interests.some(t => chosenTags.includes(t)));
+            });
+
+            // Level 2 Elastic Adaptation Fallback: Hold Budget ceiling & tag keys, relax demographic constraints
+            if (dataPassResults.length === 0) {
+                dataPassResults = masterProducts.filter(item => {
+                    return item.price <= activeCeilingPrice && 
+                           (chosenTags.length === 0 || item.interests.some(t => chosenTags.includes(t)));
+                });
+            }
+
+            // Level 3 absolute secure pass line: Guarantee render layout metrics inside strict user price selection
+            if (dataPassResults.length === 0) {
+                dataPassResults = masterProducts.filter(item => item.price <= activeCeilingPrice);
+            }
+
+            renderProductsToTargetGrid(dataPassResults, 'catalogGrid');
+        }
+
+        function renderProductsToTargetGrid(itemsArray, destinationGridElementId) {
+            const gridTargetContainer = document.getElementById(destinationGridElementId);
+            gridTargetContainer.innerHTML = '';
+            
+            if(destinationGridElementId === 'catalogGrid') {
+                document.getElementById('catalogSummary').innerText = `Displaying ${itemsArray.length} items perfectly engineered beneath your $${document.getElementById('budgetSlider').value} pricing cap threshold limit value metrics.`;
+            }
+
+            itemsArray.forEach(product => {
+                const elementCardNode = document.createElement('div');
+                elementCardNode.className = "bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-indigo-500/50 shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 flex flex-col justify-between group";
+                elementCardNode.innerHTML = `
+                    <div>
+                        <div class="relative aspect-video w-full bg-slate-900/60 overflow-hidden">
+                            <img src="${product.img}" alt="${product.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800">
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+                                <span>${product.rating} <span class="text-slate-500 font-medium">(${product.reviews})</span></span>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex flex-wrap gap-1.5 mb-3">
+                                <span class="bg-indigo-500/10 text-indigo-400 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-indigo-500/10 tracking-wider">${product.age}</span>
+                                ${product.interests.map(i => `<span class="bg-slate-800/60 text-slate-400 text-[9px] font-bold uppercase px-2 py-0.5 rounded border border-slate-700/40">${i}</span>`).join('')}
+                            </div>
+                            <h4 class="font-bold text-slate-100 text-sm leading-snug group-hover:text-indigo-400 transition duration-200">${product.title}</h4>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0 mt-2 flex items-center justify-between border-t border-slate-900/60 pt-4">
+                        <div>
+                            <p class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Value Match</p>
+                            <span class="text-lg font-black text-white">$${product.price}</span>
+                        </div>
+                        <button onclick="commitProductToCart(${product.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-lg shadow-indigo-600/10">
+                            <span>Secure Gift</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                gridTargetContainer.appendChild(elementCardNode);
+            });
+            lucide.createIcons();
+        }
+
+        function renderTrendingViewGrid() {
+            const eliteProducts = masterProducts.filter(p => p.rating >= 4.7);
+            renderProductsToTargetGrid(eliteProducts, 'trendingGrid');
+        }
+
+        // Drawer Operations Interface Management 
+        function toggleCartDrawer(open) {
+            const drawerNode = document.getElementById('cartDrawer');
+            if (open) drawerNode.classList.remove('hidden');
+            else drawerNode.classList.add('hidden');
+        }
+
+        function commitProductToCart(id) {
+            const chosenObj = masterProducts.find(x => x.id === id);
+            if (!chosenObj) return;
+
+            cartArray.push(chosenObj);
+            refreshCartDrawerUI();
+
+            // Fire Interactive Toast Message Alert System
+            const toastElement = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = `Provisioned "${chosenObj.title.substring(0, 24)}..." successfully to checkout profile!`;
+            toastElement.className = "fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-0 opacity-100 transition-all duration-300 z-50 text-xs font-bold border border-indigo-400/20";
+            
+            setTimeout(() => { 
+                toastElement.className = "fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 z-50 text-xs font-bold border border-indigo-400/20"; 
+            }, 3000);
+        }
+
+        function removeElementIndexFromCart(index) {
+            cartArray.splice(index, 1);
+            refreshCartDrawerUI();
+        }
+
+        function refreshCartDrawerUI() {
+            const countLabelBadge = document.getElementById('cartCountBadge');
+            countLabelBadge.innerText = cartArray.length;
+            if(cartArray.length > 0) countLabelBadge.classList.remove('hidden');
+            else countLabelBadge.classList.add('hidden');
+
+            const drawerListWrapper = document.getElementById('cartItemsList');
+            const calculatedTotalSumDisplayLabel = document.getElementById('cartTotalSum');
+
+            if (cartArray.length === 0) {
+                drawerListWrapper.innerHTML = `<p class="text-slate-500 text-xs py-12 text-center font-medium">Your curated gift queue is currently empty. Choose a profile parameter matrix set above to fill slots!</p>`;
+                calculatedTotalSumDisplayLabel.innerText = "$0.00";
+                return;
+            }
+
+            drawerListWrapper.innerHTML = '';
+            let additiveTotalSumAccumulator = 0;
+            
+            cartArray.forEach((productItem, structuralIdx) => {
+                additiveTotalSumAccumulator += productItem.price;
+                const rowLineItemNode = document.createElement('div');
+                rowLineItemNode.className = "flex items-center justify-between bg-slate-900/60 border border-slate-800/80 p-3 rounded-xl gap-2";
+                rowLineItemNode.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <img src="${productItem.img}" class="w-10 h-10 rounded-lg object-cover bg-slate-800">
+                        <div>
+                            <h5 class="text-xs font-bold text-slate-200 line-clamp-1">${productItem.title}</h5>
+                            <span class="text-xs text-indigo-400 font-black">$${productItem.price}</span>
+                        </div>
+                    </div>
+                    <button onclick="removeElementIndexFromCart(${structuralIdx})" class="text-slate-500 hover:text-rose-400 p-1.5 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                `;
+                drawerListWrapper.appendChild(rowLineItemNode);
+            });
+
+            calculatedTotalSumDisplayLabel.innerText = `$${additiveTotalSumAccumulator}.00`;
+            lucide.createIcons();
+        }
+
+        // Structural Dom Controls Event Bindings Configuration
+        document.getElementById('ageGroupContainer').addEventListener('click', (e) => {
+            const ageBtnTargetNode = e.target.closest('[data-age]');
+            if (!ageBtnTargetNode) return;
+
+            document.querySelectorAll('.age-btn').forEach(b => b.className = "age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition text-white");
+            ageBtnTargetNode.className = "age-btn active-pill p-3 rounded-xl text-left text-xs transition";
+            
+            targetAge = ageBtnTargetNode.getAttribute('data-age');
+            triggerEvaluation();
+        });
+
+        document.getElementById('budgetSlider').addEventListener('input', (e) => {
+            document.getElementById('priceLabel').innerText = `$${e.target.value} Max`;
+            triggerEvaluation();
+        });
+
+        document.getElementById('occasionField').addEventListener('change', triggerEvaluation);
+        document.querySelectorAll('input[name="interestTag"]').forEach(inputNode => inputNode.addEventListener('change', triggerEvaluation));
+
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            document.getElementById('budgetSlider').value = 150;
+            document.getElementById('priceLabel').innerText = "$150 Max";
+            document.getElementById('occasionField').value = "birthday";
+            document.querySelectorAll('input[name="interestTag"]').forEach(cb => cb.checked = true);
+            triggerEvaluation();
+        });
+
+        // Initialize Engine state sequence execution payload initialization
+        window.onload = () => { triggerEvaluation(); };
+    </script>
+</body>
+</html>

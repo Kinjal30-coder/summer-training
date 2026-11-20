@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GiftyAI — Personalized Indian Gift Finder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
+
+        .active-pill { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border-color: #6366f1; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3); }
+        .active-nav { color: #818cf8; position: relative; }
+        .active-nav::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 2px; background: #818cf8; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-50 selection:text-indigo-900">
+
+    <div class="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Header -->
+    <header class="bg-[#0f172a]/85 backdrop-blur-md sticky top-0 z-40 border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+            <div onclick="switchView('finder')" class="flex items-center gap-2.5 font-extrabold text-2xl tracking-tight cursor-pointer group">
+                <div class="bg-indigo-600 p-2 rounded-xl group-hover:rotate-12 transition duration-300">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white fill-indigo-200"></i>
+                </div>
+                <span class="bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Gifty<span class="text-indigo-400">AI</span></span>
+            </div>
+            
+            <nav class="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <button onclick="switchView('finder')" id="nav-finder" class="active-nav transition duration-200 cursor-pointer">AI Recommendation Engine</button>
+                <button onclick="switchView('trending')" id="nav-trending" class="hover:text-slate-200 transition duration-200 cursor-pointer">Trending Bestsellers</button>
+                <button onclick="switchView('learning')" id="nav-learning" class="hover:text-slate-200 transition duration-200 cursor-pointer">How It Learns</button>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <!-- Logged Out Button -->
+                <button id="headerLoginBtn" onclick="openAuthModal('login')" class="bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700/80 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer">
+                    <i data-lucide="user" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Sign In</span>
+                </button>
+
+                <!-- Logged In User Profile Dropdown -->
+                <div id="headerUserMenu" class="relative hidden">
+                    <button onclick="toggleUserDropdown()" class="flex items-center gap-2.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 px-3 py-1.5 rounded-xl transition cursor-pointer">
+                        <div id="userAvatarInitials" class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-black text-white">U</div>
+                        <div class="hidden sm:block text-left">
+                            <p id="headerUserName" class="text-xs font-bold text-slate-200 leading-none">User</p>
+                            <p class="text-[10px] text-emerald-400 font-medium mt-0.5">Synced</p>
+                        </div>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400"></i>
+                    </button>
+
+                    <div id="userDropdownPanel" class="hidden absolute right-0 mt-2 w-56 bg-[#0f172a] border border-slate-800 rounded-2xl shadow-2xl p-2 z-50">
+                        <div class="px-3 py-2 border-b border-slate-800/80 mb-1">
+                            <p id="dropdownUserFullName" class="text-xs font-bold text-white truncate">User Name</p>
+                            <p id="dropdownUserEmail" class="text-[11px] text-slate-400 truncate">user@example.com</p>
+                        </div>
+                        <button onclick="toggleUserDropdown(); toggleCartDrawer(true);" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800/70 flex items-center gap-2 transition cursor-pointer">
+                            <i data-lucide="heart" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span>My Saved Shortlist</span>
+                        </button>
+                        <button onclick="handleLogout()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition mt-1 cursor-pointer">
+                            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shortlist Cart Button -->
+                <button onclick="toggleCartDrawer(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 active:scale-95 cursor-pointer">
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    <span>Shortlist</span>
+                    <span id="cartCountBadge" class="hidden bg-white text-indigo-600 rounded-full px-1.5 py-0.5 text-[10px] font-black">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Login / Sign Up Modal -->
+    <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm hidden flex items-center justify-center p-4 transition duration-300" onclick="if(event.target === this) closeAuthModal()">
+        <div class="bg-[#0f172a] border border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-2.5 font-extrabold text-xl">
+                    <div class="bg-indigo-600 p-1.5 rounded-xl">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <span>Gifty<span class="text-indigo-400">AI</span></span>
+                </div>
+                <button onclick="closeAuthModal()" class="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-800/50 transition cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Auth Mode Switcher Tabs -->
+            <div class="grid grid-cols-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 mb-6">
+                <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="py-2 rounded-lg text-xs font-bold transition cursor-pointer bg-indigo-600 text-white shadow">Sign In</button>
+                <button id="tabSignupBtn" onclick="switchAuthTab('signup')" class="py-2 rounded-lg text-xs font-bold transition cursor-pointer text-slate-400 hover:text-slate-200">Create Account</button>
+            </div>
+
+            <div id="authErrorBox" class="hidden mb-4 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs px-3.5 py-2.5 rounded-xl"></div>
+
+            <!-- Sign In Form -->
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
+                        <input id="loginEmail" type="email" required placeholder="you@example.com" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Password</label>
+                        <button type="button" onclick="fillDemoCredentials()" class="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer">Use Demo Account</button>
+                    </div>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
+                        <input id="loginPassword" type="password" required placeholder="••••••••" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                        <button type="button" onclick="togglePasswordVisibility('loginPassword')" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-500/20 cursor-pointer mt-2">
+                    Sign In to GiftyAI
+                </button>
+            </form>
+
+            <!-- Create Account Form -->
+            <form id="signupForm" onsubmit="handleSignupSubmit(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Full Name</label>
+                    <div class="relative">
+                        <i data-lucide="user" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
+                        <input id="signupName" type="text" required placeholder="Aarav Sharma" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                    <div class="relative">
+                        <i data-lucide="mail" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
+                        <input id="signupEmail" type="email" required placeholder="you@example.com" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Create Password</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500 absolute left-3.5 top-3"></i>
+                        <input id="signupPassword" type="password" required minlength="6" placeholder="Min. 6 characters" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+                        <button type="button" onclick="togglePasswordVisibility('signupPassword')" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-500/20 cursor-pointer mt-2">
+                    Create Free Account
+                </button>
+            </form>
+
+            <div class="mt-5 pt-4 border-t border-slate-800/80 text-center">
+                <p class="text-[11px] text-slate-400">Sign in to sync your shortlisted gifts across sessions.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortlist Drawer -->
+    <div id="cartDrawer" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden transition duration-300" onclick="if(event.target === this) toggleCartDrawer(false)">
+        <div class="absolute right-0 top-0 bottom-0 max-w-md w-full bg-[#0f172a] border-l border-slate-800 shadow-2xl p-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between border-b border-slate-800/60 pb-4 mb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="shopping-bag" class="text-indigo-400 w-5 h-5"></i>
+                        <h2 class="text-lg font-bold text-white">Your Gift Shortlist</h2>
+                    </div>
+                    <button onclick="toggleCartDrawer(false)" class="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-800/40 transition cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="cartSyncBanner" class="mb-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-3 py-2 text-[11px] text-indigo-300 flex items-center justify-between">
+                    <span>Sign in to save your shortlist permanently.</span>
+                    <button onclick="toggleCartDrawer(false); openAuthModal('login');" class="font-bold underline cursor-pointer">Sign In</button>
+                </div>
+                <div id="cartItemsList" class="space-y-3 overflow-y-auto max-h-[58vh] pr-1"></div>
+            </div>
+            <div class="border-t border-slate-800/80 pt-4">
+                <div class="flex justify-between text-base font-bold text-slate-300 mb-4">
+                    <span>Total Estimated Budget:</span>
+                    <span id="cartTotalSum" class="text-indigo-400 text-xl font-extrabold">₹0</span>
+                </div>
+                <button onclick="finalizeShortlistAction()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-sm font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-500/10 cursor-pointer">
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 relative z-10">
+        
+        <div id="view-finder" class="view-section transition duration-300">
+            <section class="text-center max-w-2xl mx-auto mb-16">
+                <span class="inline-flex items-center gap-1.5 bg-indigo-500/10 text-indigo-300 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-widest border border-indigo-500/20 mb-4 animate-pulse">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5"></i> Audience-Aligned AI Recommendation Engine (120+ Items)
+                </span>
+                <h1 class="text-4xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                    The Ultimate Gift Finder, <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Perfected by AI.</span>
+                </h1>
+                <p class="text-slate-400 mt-4 text-sm sm:text-base max-w-xl mx-auto">
+                    Select recipient age, occasion, rupee ceiling, and interests to discover tailored items curated strictly for their exact life stage and daily use.
+                </p>
+            </section>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <aside class="lg:col-span-4 bg-[#0f172a]/60 border border-slate-800/80 p-6 sm:p-8 rounded-3xl backdrop-blur-md shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-slate-800/80 pb-5 mb-6">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sliders" class="text-indigo-400 w-4 h-4"></i>
+                            <h2 class="font-bold text-sm uppercase tracking-wider text-slate-300">Engine Parameters</h2>
+                        </div>
+                        <button id="resetFilters" class="text-xs text-indigo-400 hover:text-indigo-300 transition font-medium cursor-pointer">Reset Matrix</button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">1. Target Recipient</label>
+                            <div class="grid grid-cols-2 gap-2" id="ageGroupContainer">
+                                <button data-age="kids" class="age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition cursor-pointer">👶 Kids (4–12)</button>
+                                <button data-age="teens" class="age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition cursor-pointer">⚡ Teens (13–19)</button>
+                                <button data-age="adults" class="age-btn active-pill p-3 rounded-xl text-left text-xs transition cursor-pointer">💼 Adults (20–55)</button>
+                                <button data-age="seniors" class="age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition cursor-pointer">🧓 Seniors (55+)</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">2. Event Context</label>
+                            <div class="relative">
+                                <select id="occasionField" class="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition cursor-pointer appearance-none">
+                                    <option value="all" selected>🎉 General / Any Event</option>
+                                    <option value="birthday">🎂 Birthday Celebration</option>
+                                    <option value="anniversary">💖 Romance & Anniversary</option>
+                                    <option value="graduation">🎓 Graduation & Career</option>
+                                    <option value="holiday">🪔 Festive & Seasonal (Diwali / Christmas)</option>
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-4 top-3.5 text-slate-500 w-4 h-4 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-[11px] font-bold uppercase tracking-widest text-slate-400">3. Maximum Price Ceiling</label>
+                                <span id="priceLabel" class="text-indigo-400 font-black text-xs bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">₹35,000 Max</span>
+                            </div>
+                            <input id="budgetSlider" type="range" min="500" max="35000" value="35000" step="500" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1 font-mono">
+                                <span>₹500</span>
+                                <span>₹17,500</span>
+                                <span>₹35,000</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2.5">4. Core Interest Map Alignment</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="cpu" class="w-4 h-4 text-slate-500"></i><span>Tech & Gadgets</span></div>
+                                    <input type="checkbox" name="interestTag" value="tech" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="palette" class="w-4 h-4 text-slate-500"></i><span>Art & Creative Crafts</span></div>
+                                    <input type="checkbox" name="interestTag" value="creative" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="dumbbell" class="w-4 h-4 text-slate-500"></i><span>Fitness & Outdoors</span></div>
+                                    <input type="checkbox" name="interestTag" value="fitness" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                                <label class="flex items-center justify-between bg-slate-900/40 border border-slate-800/60 p-3 rounded-xl cursor-pointer hover:bg-slate-800/40 transition">
+                                    <div class="flex items-center gap-2.5 text-xs font-medium text-slate-300"><i data-lucide="coffee" class="w-4 h-4 text-slate-500"></i><span>Home Comforts & Foodie</span></div>
+                                    <input type="checkbox" name="interestTag" value="home" checked class="w-4 h-4 accent-indigo-500 rounded border-slate-700 bg-slate-800">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <section class="lg:col-span-8 flex flex-col gap-6">
+                    <div class="bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between backdrop-blur-md">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-emerald-500/10 text-emerald-400 p-2 rounded-xl border border-emerald-500/20"><i data-lucide="activity" class="w-4 h-4"></i></div>
+                            <div>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Optimization Summary</p>
+                                <h3 id="catalogSummary" class="text-xs font-semibold text-slate-300">Analyzing criteria matrix values...</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+                </section>
+            </div>
+        </div>
+
+        <div id="view-trending" class="view-section hidden transition duration-300">
+            <div class="max-w-5xl mx-auto">
+                <div class="text-center mb-12">
+                    <span class="bg-amber-500/10 text-amber-300 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-500/20">🔥 Top Rated Audience Favorites</span>
+                    <h2 class="text-3xl font-black text-white tracking-tight mt-2">Trending High Performance Gift Matrix</h2>
+                    <p class="text-slate-400 text-sm mt-1">Highest-rated items across all target audiences with &ge;4.8 star satisfaction scores.</p>
+                </div>
+                <div id="trendingGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+
+        <div id="view-learning" class="view-section hidden transition duration-300">
+            <div class="max-w-3xl mx-auto bg-[#0f172a]/60 border border-slate-800/80 rounded-3xl p-8 backdrop-blur-md shadow-2xl">
+                <div class="flex items-center gap-4 border-b border-slate-800/80 pb-6 mb-6">
+                    <div class="bg-indigo-500/10 p-3 rounded-2xl text-indigo-400 border border-indigo-500/20"><i data-lucide="brain-circuit" class="w-6 h-6 animate-pulse"></i></div>
+                    <div>
+                        <h2 class="text-xl font-extrabold text-white">Audience-Aligned Preference Weights Engine</h2>
+                        <p class="text-xs text-slate-400 font-medium">How calculations sort inventory strictly by recipient life stage and use-case limits</p>
+                    </div>
+                </div>
+                <div class="space-y-6 text-xs text-slate-400 leading-relaxed font-medium">
+                    <div class="bg-slate-900/40 border border-slate-800/40 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>Step 1: Life Stage & Use-Case Intersect</h3>
+                        <p>Filters products mapped specifically to what each demographic actually uses—such as STEM toys for kids, study gear for teens, productivity and home tech for adults, and wellness/mobility aids for seniors.</p>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800/40 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>Step 2: Hard Ceiling Budget Filter Block (₹)</h3>
+                        <p>Enforces your exact rupee slider limit (₹500 – ₹35,000), blocking any item priced above your selected threshold.</p>
+                    </div>
+                    <div class="bg-slate-900/40 border border-slate-800/40 p-4 rounded-xl">
+                        <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-pink-400"></span>Step 3: Elastic Graceful Fallback</h3>
+                        <p>If an ultra-narrow filter combination returns zero exact hits, the engine relaxes the occasion tag first—while strictly respecting your rupee budget and recipient group.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-indigo-600 text-white px-5 py-3.5 rounded-2xl shadow-xl shadow-indigo-600/10 flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 z-50 text-xs font-bold border border-indigo-400/20">
+        <i data-lucide="check" class="w-4 h-4 bg-white/20 p-0.5 rounded-md"></i>
+        <span id="toastMessage">Added to shortlist!</span>
+    </div>
+
+    <script>
+        // 120 Audience-Aligned Gift Recommendations (30 strictly tailored items per target age group) Priced in Indian Rupees (₹)
+        const masterProducts = [
+            // ================= KIDS (4-12 Years | 30 Items - STEM, Toys, Art, Outdoor Play) =================
+            { id: 101, title: "Smartivity Hydraulic Crane STEM DIY Wooden Kit", price: 899, age: "kids", occasion: "graduation", interests: ["tech", "creative"], rating: 4.8, reviews: 3250, reason: "Teaches young kids hydraulic mechanics and engineering without screen time.", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=500&q=80" },
+            { id: 102, title: "LEGO Classic Medium Creative Brick Box (484 Pieces)", price: 2499, age: "kids", occasion: "birthday", interests: ["creative", "tech"], rating: 4.9, reviews: 14200, reason: "Boosts spatial imagination and open-ended structural building for children.", img: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?auto=format&fit=crop&w=500&q=80" },
+            { id: 103, title: "Faber-Castell 48-Shade Connector Pen & Art Kit", price: 649, age: "kids", occasion: "birthday", interests: ["creative"], rating: 4.7, reviews: 4120, reason: "Vibrant washable markers designed for school projects and creative drawing.", img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=500&q=80" },
+            { id: 104, title: "Nivia Storm Moulded Rubber Junior Football (Size 4)", price: 699, age: "kids", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 5640, reason: "Encourages outdoor physical activity and playground sports for kids.", img: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=500&q=80" },
+            { id: 105, title: "Imagimake Mapology India & World States Foam Puzzle", price: 1199, age: "kids", occasion: "graduation", interests: ["creative", "home"], rating: 4.8, reviews: 6780, reason: "Playful geography puzzle kit to help kids memorize countries and states easily.", img: "https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?auto=format&fit=crop&w=500&q=80" },
+            { id: 106, title: "Decathlon Oxelo Kids 3-Wheel Kick Scooter", price: 3999, age: "kids", occasion: "birthday", interests: ["fitness"], rating: 4.8, reviews: 1850, reason: "Patented steering system helps young children build balance and motor coordination.", img: "https://images.unsplash.com/photo-1547447134-cd3f5c716030?auto=format&fit=crop&w=500&q=80" },
+            { id: 107, title: "Casio SA-81 44-Mini Key Electronic Musical Keyboard", price: 4795, age: "kids", occasion: "graduation", interests: ["creative", "tech"], rating: 4.8, reviews: 3110, reason: "Introduces children to musical notes and rhythm with 100 built-in tones.", img: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=500&q=80" },
+            { id: 108, title: "Hot Wheels 10-Car Die-Cast Vehicle Gift Pack", price: 1299, age: "kids", occasion: "birthday", interests: ["creative", "tech"], rating: 4.8, reviews: 11200, reason: "Classic miniature cars for imaginative track racing and collecting.", img: "https://images.unsplash.com/photo-1581557991964-125469da3b8a?auto=format&fit=crop&w=500&q=80" },
+            { id: 109, title: "Funskool Monopoly Junior Classic Board Game", price: 699, age: "kids", occasion: "holiday", interests: ["home"], rating: 4.6, reviews: 8900, reason: "Teaches basic money counting and strategic planning in a simplified board game format.", img: "https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=500&q=80" },
+            { id: 110, title: "Rubik's 3x3 Original Speed Cube Puzzle", price: 499, age: "kids", occasion: "graduation", interests: ["tech", "creative"], rating: 4.7, reviews: 19400, reason: "Enhances logical thinking, patience, and spatial problem-solving.", img: "https://images.unsplash.com/photo-1591991731833-b4807cf7ef94?auto=format&fit=crop&w=500&q=80" },
+            { id: 111, title: "Hamleys Cuddly Plush Teddy Bear with Ribbon Bow", price: 1299, age: "kids", occasion: "birthday", interests: ["home"], rating: 4.8, reviews: 5200, reason: "Soft companion toy for comforting playtime and bedroom decor.", img: "https://images.unsplash.com/photo-1556012018-50fa5c06da3f?auto=format&fit=crop&w=500&q=80" },
+            { id: 112, title: "Webby Wooden Activity Triangle Cube Maze for Toddlers", price: 1199, age: "kids", occasion: "birthday", interests: ["creative", "home"], rating: 4.6, reviews: 1890, reason: "Multi-sided sensory puzzle toy for early cognitive development.", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=500&q=80" },
+            { id: 113, title: "360° Rotating Star & Moon Galaxy Night Lamp Projector", price: 799, age: "kids", occasion: "holiday", interests: ["home"], rating: 4.5, reviews: 1890, reason: "Projects soothing night skies to help young children fall asleep comfortably.", img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" },
+            { id: 114, title: "Strauss Adjustable LED Light-Up Inline Skates", price: 2799, age: "kids", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 2180, reason: "Promotes outdoor agility and balance with size-adjustable boots.", img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=500&q=80" },
+            { id: 115, title: "Toyshine Kids Instant Thermal Print Camera", price: 3299, age: "kids", occasion: "birthday", interests: ["tech", "creative"], rating: 4.6, reviews: 940, reason: "Allows kids to snap pictures and instantly print black-and-white memories.", img: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=500&q=80" },
+            { id: 116, title: "LEGO Technic NASA Mars Rover Perseverance", price: 8999, age: "kids", occasion: "graduation", interests: ["tech", "creative"], rating: 4.9, reviews: 1940, reason: "Advanced robotic building kit inspiring passion for space exploration.", img: "https://images.unsplash.com/photo-1531693251400-38df35776dc7?auto=format&fit=crop&w=500&q=80" },
+            { id: 117, title: "Foldable Cotton Canvas Kids Teepee Play Tent", price: 3499, age: "kids", occasion: "anniversary", interests: ["home", "creative"], rating: 4.6, reviews: 780, reason: "Creates a cozy personal reading nook or private play fortress indoors.", img: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=500&q=80" },
+            { id: 118, title: "Nintendo Switch Lite Handheld Gaming Console", price: 18999, age: "kids", occasion: "holiday", interests: ["tech"], rating: 4.9, reviews: 6420, reason: "Dedicated portable gaming system loaded with family-friendly titles.", img: "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?auto=format&fit=crop&w=500&q=80" },
+            { id: 119, title: "Nerf Alpha Strike Fang Blaster Set with 10 Darts", price: 899, age: "kids", occasion: "birthday", interests: ["fitness"], rating: 4.5, reviews: 4310, reason: "Encourages active target practice and outdoor target games.", img: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=500&q=80" },
+            { id: 120, title: "Disney Frozen Elsa Musical Singing Doll", price: 1999, age: "kids", occasion: "birthday", interests: ["creative"], rating: 4.7, reviews: 3400, reason: "Interactive fashion doll that plays favorite movie songs.", img: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=500&q=80" },
+            { id: 121, title: "Skoodle Magic Slate & Reusable Drawing Board", price: 599, age: "kids", occasion: "holiday", interests: ["creative"], rating: 4.4, reviews: 1520, reason: "Provides mess-free sketching and writing practice for young learners.", img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=500&q=80" },
+            { id: 122, title: "Pictionary Junior Family Board Game", price: 799, age: "kids", occasion: "birthday", interests: ["creative", "home"], rating: 4.5, reviews: 2100, reason: "Interactive drawing game that builds vocabulary and teamwork.", img: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=500&q=80" },
+            { id: 123, title: "Centy Toys Metallic Pull-Back Auto Rickshaw & Cars", price: 449, age: "kids", occasion: "birthday", interests: ["tech"], rating: 4.6, reviews: 3100, reason: "Durable die-cast miniature vehicles representing everyday transport.", img: "https://images.unsplash.com/photo-1581557991964-125469da3b8a?auto=format&fit=crop&w=500&q=80" },
+            { id: 124, title: "Kreative Kids Clay Dough Ice Cream Parlour Playset", price: 799, age: "kids", occasion: "holiday", interests: ["creative"], rating: 4.5, reviews: 1450, reason: "Non-toxic molding clay to sculpt pretend treats and boost finger dexterity.", img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=500&q=80" },
+            { id: 125, title: "Jaspo Plastic Cricket Bat & Soft Ball Set for Kids", price: 699, age: "kids", occasion: "birthday", interests: ["fitness"], rating: 4.5, reviews: 4890, reason: "Lightweight cricket gear tailored for safe backyard and park matches.", img: "https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=500&q=80" },
+            { id: 126, title: "Storio Kids LCD Writing Tablet 8.5 Inch", price: 349, age: "kids", occasion: "graduation", interests: ["tech", "creative"], rating: 4.4, reviews: 7200, reason: "Paperless electronic scratchpad for math homework and doodles.", img: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?auto=format&fit=crop&w=500&q=80" },
+            { id: 127, title: "Clementoni Mickey Mouse Floor Jigsaw Puzzle", price: 899, age: "kids", occasion: "holiday", interests: ["creative"], rating: 4.7, reviews: 920, reason: "Large interlocking cardboard puzzle pieces designed for preschool hands.", img: "https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?auto=format&fit=crop&w=500&q=80" },
+            { id: 128, title: "Wakefit Kids Astronaut Microfiber Comforter Set", price: 2199, age: "kids", occasion: "holiday", interests: ["home"], rating: 4.7, reviews: 1490, reason: "Hypoallergenic, ultra-soft bedding designed with fun space themes.", img: "https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?auto=format&fit=crop&w=500&q=80" },
+            { id: 129, title: "boAt Rockerz 450 Wireless Kids Headphones", price: 1499, age: "kids", occasion: "holiday", interests: ["tech"], rating: 4.5, reviews: 28400, reason: "Cushioned, lightweight wireless headphones for learning apps and media.", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80" },
+            { id: 130, title: "Amazon Echo Dot (5th Gen) Kids Smart Speaker", price: 5499, age: "kids", occasion: "holiday", interests: ["tech", "home"], rating: 4.7, reviews: 9420, reason: "Voice-controlled smart speaker with parental controls for kid-friendly stories.", img: "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=500&q=80" },
+
+            // ================= TEENS (13-19 Years | 30 Items - Study Gear, Tech, Gaming, Aesthetics) =================
+            { id: 201, title: "Wipro Smart Wi-Fi LED Desk Study Lamp", price: 1299, age: "teens", occasion: "graduation", interests: ["tech", "home"], rating: 4.5, reviews: 4820, reason: "Adjustable eye-care illumination with app and voice control for late-night study.", img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" },
+            { id: 202, title: "Brustro Dual-Tip Alcohol Art Markers Set (24 Shades)", price: 1499, age: "teens", occasion: "birthday", interests: ["creative"], rating: 4.7, reviews: 2910, reason: "Professional dual-tip blending markers for manga sketching and art students.", img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=500&q=80" },
+            { id: 203, title: "Yonex GR 303 Aluminium Badminton Racquet Set", price: 1199, age: "teens", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 19400, reason: "Durable isometric racquets for college sports and evening court matches.", img: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=500&q=80" },
+            { id: 204, title: "Portronics Ruffpad 15M Re-Writable LCD Writing Pad", price: 799, age: "teens", occasion: "graduation", interests: ["tech", "creative"], rating: 4.5, reviews: 6120, reason: "Paperless digital slate for quick math calculations and physics formulas.", img: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?auto=format&fit=crop&w=500&q=80" },
+            { id: 205, title: "Noise ColorFit Pulse 4 Max AMOLED Smartwatch", price: 2499, age: "teens", occasion: "birthday", interests: ["tech", "fitness"], rating: 4.5, reviews: 11200, reason: "Tracks daily steps, notifications, and workouts with a crisp AMOLED screen.", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80" },
+            { id: 206, title: "Wildcraft Wiki 32L Water-Resistant College Backpack", price: 1899, age: "teens", occasion: "graduation", interests: ["fitness", "home"], rating: 4.6, reviews: 8740, reason: "Ergonomic padded compartments designed to carry laptops and books safely.", img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80" },
+            { id: 207, title: "Fujifilm Instax Mini 12 Instant Film Camera", price: 6499, age: "teens", occasion: "birthday", interests: ["creative", "tech"], rating: 4.8, reviews: 5430, reason: "Captures tangible pocket-sized memories instantly at hangouts and parties.", img: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=500&q=80" },
+            { id: 208, title: "Wacom One Medium Graphic Drawing Tablet", price: 5499, age: "teens", occasion: "graduation", interests: ["creative", "tech"], rating: 4.7, reviews: 9810, reason: "Connects to laptops for digital illustration, graphic design, and note-taking.", img: "https://images.unsplash.com/photo-1563206767-5b18f218e8de?auto=format&fit=crop&w=500&q=80" },
+            { id: 209, title: "JBL Flip 6 Wireless Portable Waterproof Speaker", price: 8999, age: "teens", occasion: "holiday", interests: ["tech", "fitness"], rating: 4.8, reviews: 7650, reason: "Delivers punchy outdoor sound and deep bass for hostel rooms and trips.", img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=500&q=80" },
+            { id: 210, title: "Jaspo Cruiser Canadian Maple Complete Skateboard", price: 3299, age: "teens", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 1420, reason: "Smooth ABEC-7 street cruising skateboard for active teenagers.", img: "https://images.unsplash.com/photo-1547447134-cd3f5c716030?auto=format&fit=crop&w=500&q=80" },
+            { id: 211, title: "Kadence Frontier Acoustic Guitar Combo with Bag", price: 4999, age: "teens", occasion: "birthday", interests: ["creative"], rating: 4.6, reviews: 12300, reason: "Complete beginner-friendly acoustic guitar kit to learn music.", img: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=500&q=80" },
+            { id: 212, title: "Tropica Mini 6L Skincare & Drink Cooler Fridge", price: 4499, age: "teens", occasion: "holiday", interests: ["home"], rating: 4.5, reviews: 890, reason: "Compact desktop refrigerator to keep beverages and skincare cold.", img: "https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?auto=format&fit=crop&w=500&q=80" },
+            { id: 213, title: "Logitech G502 HERO High-Performance Gaming Mouse", price: 4195, age: "teens", occasion: "holiday", interests: ["tech"], rating: 4.8, reviews: 21400, reason: "Precise adjustable-weight gaming mouse for esports and computer labs.", img: "https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=500&q=80" },
+            { id: 214, title: "DJI Neo Palm-Sized 4K Vlog Camera Drone", price: 21999, age: "teens", occasion: "graduation", interests: ["tech", "creative"], rating: 4.8, reviews: 1640, reason: "Lightweight drone that launches from your hand for cinematic social reels.", img: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=500&q=80" },
+            { id: 215, title: "Apple iPad 10.9-inch Wi-Fi 64GB", price: 32900, age: "teens", occasion: "graduation", interests: ["tech", "creative"], rating: 4.9, reviews: 8920, reason: "Powerful tablet for digital textbooks, online classes, and sketching.", img: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=500&q=80" },
+            { id: 216, title: "Meta Quest 3S 128GB Mixed Reality Headset", price: 33999, age: "teens", occasion: "holiday", interests: ["tech", "fitness"], rating: 4.9, reviews: 2450, reason: "Immersive VR gaming and interactive educational experiences.", img: "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&w=500&q=80" },
+            { id: 217, title: "Zebronics Zeb-Max Pro Mechanical Gaming Keyboard", price: 2999, age: "teens", occasion: "birthday", interests: ["tech"], rating: 4.5, reviews: 3410, reason: "Tactile mechanical keyboard with customizable RGB for typing and gaming.", img: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=500&q=80" },
+            { id: 218, title: "Portronics SoundDrum 10W Portable Speaker", price: 1399, age: "teens", occasion: "birthday", interests: ["tech", "fitness"], rating: 4.6, reviews: 14200, reason: "Compact cylindrical Bluetooth speaker with crisp room audio.", img: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=500&q=80" },
+            { id: 219, title: "Cosmic Byte G4000 Gaming Headset with Mic", price: 1299, age: "teens", occasion: "holiday", interests: ["tech"], rating: 4.4, reviews: 18900, reason: "Comfortable padded headset for multiplayer gaming and online lectures.", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80" },
+            { id: 220, title: "Mi LED Smart Desk Lamp 1S", price: 2499, age: "teens", occasion: "graduation", interests: ["tech", "home"], rating: 4.7, reviews: 4100, reason: "Optimized lighting modes for reading textbooks and computer work.", img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" },
+            { id: 221, title: "Boldfit Ankle Weights Set (1kg each)", price: 699, age: "teens", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 5210, reason: "Adds resistance to home workouts, running, and athletic drills.", img: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=500&q=80" },
+            { id: 222, title: "Amazon Echo Pop Smart Speaker with Alexa", price: 2999, age: "teens", occasion: "holiday", interests: ["tech", "home"], rating: 4.7, reviews: 8100, reason: "Compact smart assistant for setting study alarms and playing music.", img: "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=500&q=80" },
+            { id: 223, title: "Skream Wooden Table Tennis Bat Set with Balls", price: 899, age: "teens", occasion: "birthday", interests: ["fitness"], rating: 4.5, reviews: 1980, reason: "High-control table tennis paddles for school and club recreation.", img: "https://images.unsplash.com/photo-1534158914592-062992fbe900?auto=format&fit=crop&w=500&q=80" },
+            { id: 224, title: "Yonex Mavis 350 Nylon Shuttlecocks (Pack of 6)", price: 950, age: "teens", occasion: "birthday", interests: ["fitness"], rating: 4.8, reviews: 32400, reason: "Reliable flight stability for regular badminton practice.", img: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=500&q=80" },
+            { id: 225, title: "Atomic Habits by James Clear (Paperback)", price: 499, age: "teens", occasion: "graduation", interests: ["creative", "home"], rating: 4.9, reviews: 98000, reason: "Essential self-improvement book for building strong study habits.", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 226, title: "The Alchemist by Paulo Coelho", price: 399, age: "teens", occasion: "graduation", interests: ["creative"], rating: 4.8, reviews: 76000, reason: "Inspiring classic novel for young adults pursuing personal goals.", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 227, title: "InstaCuppa Travel French Press Coffee/Tea Mug", price: 1199, age: "teens", occasion: "graduation", interests: ["home"], rating: 4.6, reviews: 2100, reason: "Brew fresh loose leaf tea or coffee while commuting to college.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
+            { id: 228, title: "Mi 10000mAh Fast Charging Power Bank", price: 1299, age: "teens", occasion: "holiday", interests: ["tech"], rating: 4.6, reviews: 54100, reason: "Essential backup battery to keep phones charged during long college days.", img: "https://images.unsplash.com/photo-1609592424155-2280451a74d2?auto=format&fit=crop&w=500&q=80" },
+            { id: 229, title: "SanDisk Ultra 128GB MicroSDXC Memory Card", price: 1099, age: "teens", occasion: "holiday", interests: ["tech"], rating: 4.8, reviews: 89200, reason: "High-speed storage expansion for smartphones and tablets.", img: "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=500&q=80" },
+            { id: 230, title: "Puma Unisex Phase College Backpack", price: 1199, age: "teens", occasion: "graduation", interests: ["fitness", "home"], rating: 4.6, reviews: 11400, reason: "Durable everyday backpack with sleek athletic styling.", img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80" },
+
+            // ================= ADULTS (20-55 Years | 30 Items - Productivity, Home Tech, Fitness, Coffee, Kitchen) =================
+            { id: 301, title: "Keychron K2 V2 Wireless Mechanical Keyboard", price: 8999, age: "adults", occasion: "graduation", interests: ["tech", "creative"], rating: 4.8, reviews: 3420, reason: "Professional tactile mechanical typing built for software engineers and writers.", img: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=500&q=80" },
+            { id: 302, title: "Agaro Imperial Espresso & Cappuccino Coffee Maker", price: 11499, age: "adults", occasion: "anniversary", interests: ["home"], rating: 4.6, reviews: 3410, reason: "Barista-style 15-bar pump espresso machine for gourmet morning coffee.", img: "https://images.unsplash.com/photo-1520970014086-2208d157c9e2?auto=format&fit=crop&w=500&q=80" },
+            { id: 303, title: "Sony WH-1000XM5 Wireless Active Noise-Cancelling Headphones", price: 26990, age: "adults", occasion: "graduation", interests: ["tech"], rating: 4.9, reviews: 15800, reason: "Industry-leading noise cancellation for deep focus in open offices and flights.", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80" },
+            { id: 304, title: "Philips Air Fryer NA120/00 (4.2L) Rapid Air", price: 5499, age: "adults", occasion: "holiday", interests: ["home", "fitness"], rating: 4.7, reviews: 16400, reason: "Enables oil-free healthy cooking and quick meal prep for busy households.", img: "https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=80" },
+            { id: 305, title: "Belkin 3-in-1 Qi2 MagSafe Wireless Charging Stand", price: 9999, age: "adults", occasion: "graduation", interests: ["tech"], rating: 4.8, reviews: 2150, reason: "Declutters work desks by charging iPhone, Apple Watch, and AirPods simultaneously.", img: "https://images.unsplash.com/photo-1615526675159-e248c3021d3f?auto=format&fit=crop&w=500&q=80" },
+            { id: 306, title: "Stanley Quencher H2.0 FlowState Insulated Tumbler (1.18L)", price: 3999, age: "adults", occasion: "birthday", interests: ["fitness", "home"], rating: 4.8, reviews: 4210, reason: "Keeps hydration ice-cold throughout intense workdays and gym sessions.", img: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=500&q=80" },
+            { id: 307, title: "Blue Tokai French Press & Specialty Coffee Starter Kit", price: 2299, age: "adults", occasion: "anniversary", interests: ["home"], rating: 4.8, reviews: 1840, reason: "Manual artisanal coffee brewing set for true coffee connoisseurs.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
+            { id: 308, title: "Garmin Forerunner 165 AMOLED GPS Running Watch", price: 26990, age: "adults", occasion: "birthday", interests: ["fitness", "tech"], rating: 4.8, reviews: 1850, reason: "Advanced GPS tracking, heart-rate monitoring, and marathon training plans.", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80" },
+            { id: 309, title: "Dyson V8 Origin Cord-Free Stick Vacuum Cleaner", price: 31900, age: "adults", occasion: "holiday", interests: ["home", "tech"], rating: 4.8, reviews: 6210, reason: "Powerful cordless suction and HEPA filtration for effortless home cleaning.", img: "https://images.unsplash.com/photo-1558317374-067fb5f30001?auto=format&fit=crop&w=500&q=80" },
+            { id: 310, title: "Marshall Acton III Bluetooth Home Speaker", price: 24999, age: "adults", occasion: "anniversary", interests: ["home", "tech"], rating: 4.9, reviews: 2890, reason: "Iconic vintage rock aesthetic combined with room-filling stereo sound.", img: "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=500&q=80" },
+            { id: 311, title: "WiseLife 6mm Natural Cork & TPE Yoga Mat", price: 2499, age: "adults", occasion: "birthday", interests: ["fitness"], rating: 4.7, reviews: 3190, reason: "Eco-friendly anti-slip cork surface with laser alignment lines for home yoga.", img: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?auto=format&fit=crop&w=500&q=80" },
+            { id: 312, title: "Boldfit Heavy-Duty Resistance Tubes & Gym Set", price: 799, age: "adults", occasion: "birthday", interests: ["fitness"], rating: 4.5, reviews: 18900, reason: "Versatile portable resistance bands for full-body home strength training.", img: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=500&q=80" },
+            { id: 313, title: "Handcrafted Genuine Buffalo Leather Diary", price: 1199, age: "adults", occasion: "anniversary", interests: ["creative", "home"], rating: 4.7, reviews: 2340, reason: "Classic refillable journal for executive meeting notes and travel logs.", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 314, title: "Parker IM Matte Black Gold Trim Rollerball Pen", price: 1950, age: "adults", occasion: "graduation", interests: ["creative", "tech"], rating: 4.7, reviews: 4680, reason: "Sophisticated executive writing pen for career milestones and contracts.", img: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=500&q=80" },
+            { id: 315, title: "Samsung Galaxy Watch6 Classic LTE (43mm)", price: 21999, age: "adults", occasion: "anniversary", interests: ["tech", "fitness"], rating: 4.7, reviews: 4120, reason: "Refined stainless steel smartwatch with rotating bezel and ECG monitoring.", img: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=500&q=80" },
+            { id: 316, title: "Iris Celeste Ceramic Aroma Oil Diffuser Gift Box", price: 1699, age: "adults", occasion: "holiday", interests: ["home", "creative"], rating: 4.6, reviews: 1520, reason: "Creates a calming aromatic atmosphere for living rooms and bedrooms.", img: "https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=500&q=80" },
+            { id: 317, title: "Borosil Glass Mixing & Baking Bowl Set (Pack of 3)", price: 1299, age: "adults", occasion: "holiday", interests: ["home"], rating: 4.8, reviews: 14200, reason: "Durable heat-resistant glass bowls for baking and food prep.", img: "https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=80" },
+            { id: 318, title: "Milton Duo DLX Thermosteel Flask (1000ml)", price: 899, age: "adults", occasion: "birthday", interests: ["home", "fitness"], rating: 4.6, reviews: 21400, reason: "Double-walled vacuum insulated flask keeps beverages hot or cold all day.", img: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=500&q=80" },
+            { id: 319, title: "Kuber Industries Cotton Quilted Wardrobe Organizer", price: 799, age: "adults", occasion: "holiday", interests: ["home"], rating: 4.5, reviews: 9200, reason: "Collapsible clothing organizers to maintain immaculate closet storage.", img: "https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?auto=format&fit=crop&w=500&q=80" },
+            { id: 320, title: "Pigeon Handy Mini Chopper for Kitchen", price: 299, age: "adults", occasion: "birthday", interests: ["home"], rating: 4.4, reviews: 68400, reason: "Effortless manual vegetable chopping for daily cooking prep.", img: "https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=80" },
+            { id: 321, title: "Vega Professional Turbo 2000 Hair Dryer", price: 1399, age: "adults", occasion: "birthday", interests: ["home"], rating: 4.5, reviews: 8100, reason: "Salon-grade airflow velocity and heat control for quick styling.", img: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=500&q=80" },
+            { id: 322, title: "Ikigai: The Japanese Secret to a Long and Happy Life", price: 349, age: "adults", occasion: "graduation", interests: ["creative", "home"], rating: 4.7, reviews: 54000, reason: "Popular philosophical book on discovering purpose and balancing work-life wellbeing.", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 323, title: "The Psychology of Money by Morgan Housel", price: 399, age: "adults", occasion: "graduation", interests: ["creative"], rating: 4.8, reviews: 72000, reason: "Valuable financial mindset lessons for wealth building and investment decisions.", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 324, title: "Titan Neo Analog Dial Men's Watch", price: 2995, age: "adults", occasion: "anniversary", interests: ["home"], rating: 4.6, reviews: 6400, reason: "Sleek leather strap timepiece suitable for professional business attire.", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80" },
+            { id: 325, title: "Fastrack Limitless Smartwatch with Calling", price: 1999, age: "adults", occasion: "birthday", interests: ["tech", "fitness"], rating: 4.4, reviews: 9200, reason: "Practical bluetooth calling smartwatch with robust everyday fitness tracking.", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=500&q=80" },
+            { id: 326, title: "Boldfit Gym Duffel Bag with Shoe Compartment", price: 899, age: "adults", occasion: "birthday", interests: ["fitness"], rating: 4.6, reviews: 11400, reason: "Dedicated shoe pocket and wet compartment for gym-goers and travelers.", img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=500&q=80" },
+            { id: 327, title: "BeatXP Gravity Smart Digital Body Fat Scale", price: 999, age: "adults", occasion: "holiday", interests: ["fitness", "tech"], rating: 4.5, reviews: 14200, reason: "Monitors body composition metrics like muscle mass and BMI via mobile app.", img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" },
+            { id: 328, title: "Bombay Shaving Company Charcoal Grooming Kit", price: 999, age: "adults", occasion: "birthday", interests: ["home"], rating: 4.5, reviews: 7800, reason: "Activated charcoal skincare and shaving box for men's daily self-care.", img: "https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=500&q=80" },
+            { id: 329, title: "Clay Craft Ceramic Tea Pot and Cup Set", price: 1899, age: "adults", occasion: "anniversary", interests: ["home"], rating: 4.7, reviews: 1210, reason: "Elegant ceramic tea service set for entertaining guests at home.", img: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=500&q=80" },
+            { id: 330, title: "Portronics Power Brick II 10000mAh Power Bank", price: 999, age: "adults", occasion: "holiday", interests: ["tech"], rating: 4.5, reviews: 8100, reason: "Reliable portable backup charger for phones during business commutes.", img: "https://images.unsplash.com/photo-1609592424155-2280451a74d2?auto=format&fit=crop&w=500&q=80" },
+
+            // ================= SENIORS (55+ Years | 30 Items - Health, Mobility, Comfort, Nostalgia, Reading) =================
+            { id: 401, title: "Omron HEM-7120 Fully Automatic Blood Pressure Monitor", price: 2199, age: "seniors", occasion: "holiday", interests: ["tech", "fitness"], rating: 4.8, reviews: 42100, reason: "Clinically validated one-touch home blood pressure tracking for senior health.", img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" },
+            { id: 402, title: "Saregama Carvaan Hindi 2.0 (5000 Pre-Loaded Songs + Wi-Fi)", price: 6990, age: "seniors", occasion: "anniversary", interests: ["tech", "home"], rating: 4.8, reviews: 18900, reason: "Pre-loaded with 5000 evergreen retro tracks with simple physical dial controls.", img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=80" },
+            { id: 403, title: "Kindle Paperwhite (16 GB) 6.8\" Glare-Free E-Reader", price: 13999, age: "seniors", occasion: "birthday", interests: ["tech", "creative"], rating: 4.9, reviews: 24500, reason: "Features adjustable warm light and custom large font sizes for strain-free reading.", img: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=500&q=80" },
+            { id: 404, title: "AGARO Shiatsu Foot & Calf Kneading Massager with Heat", price: 8999, age: "seniors", occasion: "birthday", interests: ["fitness", "home"], rating: 4.7, reviews: 3890, reason: "Soothes tired legs, improves blood circulation, and relieves joint aches.", img: "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=500&q=80" },
+            { id: 405, title: "TrustBasket Ergonomic Stainless Gardening Tool Kit", price: 999, age: "seniors", occasion: "birthday", interests: ["fitness", "home"], rating: 4.6, reviews: 3420, reason: "Soft non-slip handles reduce wrist strain during balcony and garden upkeep.", img: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=500&q=80" },
+            { id: 406, title: "Dr. Ortho Soft Memory Foam Anti-Skid Home Slippers", price: 899, age: "seniors", occasion: "holiday", interests: ["home", "fitness"], rating: 4.5, reviews: 9840, reason: "Provides orthopedic arch support and slip-resistant soles for indoor safety.", img: "https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=500&q=80" },
+            { id: 407, title: "Decathlon Forclaz Shock-Absorbing Walking Poles", price: 3499, age: "seniors", occasion: "birthday", interests: ["fitness"], rating: 4.8, reviews: 1920, reason: "Reduces knee joint impact by 25% during morning park walks and hikes.", img: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=500&q=80" },
+            { id: 408, title: "10.1-Inch Frameo Wi-Fi Smart Digital Photo Frame", price: 7999, age: "seniors", occasion: "anniversary", interests: ["tech", "home"], rating: 4.7, reviews: 2410, reason: "Family members can wirelessly send live photos straight to grandparents at home.", img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=500&q=80" },
+            { id: 409, title: "Vahdam India Assorted Loose Leaf Chai Wellness Tea Box", price: 1499, age: "seniors", occasion: "anniversary", interests: ["home"], rating: 4.8, reviews: 4510, reason: "Luxury assorted Indian teas for soothing daily morning tea rituals.", img: "https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?auto=format&fit=crop&w=500&q=80" },
+            { id: 410, title: "Apple Watch SE (2nd Gen) GPS 40mm with Fall Detection", price: 24900, age: "seniors", occasion: "holiday", interests: ["tech", "fitness"], rating: 4.9, reviews: 7890, reason: "Features automatic Fall Detection, Emergency SOS, and heart rate alerts.", img: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=500&q=80" },
+            { id: 411, title: "Frank 500-Piece Large-Format Heritage India Jigsaw Puzzle", price: 749, age: "seniors", occasion: "holiday", interests: ["creative", "home"], rating: 4.7, reviews: 1120, reason: "Relaxing cognitive stimulation and memory exercise for peaceful afternoons.", img: "https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?auto=format&fit=crop&w=500&q=80" },
+            { id: 412, title: "Luxury Pure Mulberry Silk & Cotton Weighted Blanket", price: 9499, age: "seniors", occasion: "anniversary", interests: ["home"], rating: 4.8, reviews: 810, reason: "Deep-pressure calming blanket designed for restful, uninterrupted sleep.", img: "https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?auto=format&fit=crop&w=500&q=80" },
+            { id: 413, title: "Philips Smart Air Purifier AC1711 (HEPA Filter)", price: 12995, age: "seniors", occasion: "holiday", interests: ["home", "tech"], rating: 4.7, reviews: 6540, reason: "Removes allergens and dust silently overnight to protect respiratory health.", img: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=500&q=80" },
+            { id: 414, title: "Sheaffer 100 Glossy Black & Gold Fountain Pen", price: 4250, age: "seniors", occasion: "graduation", interests: ["creative"], rating: 4.8, reviews: 640, reason: "Distinguished legacy writing instrument for journaling and signing documents.", img: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=500&q=80" },
+            { id: 415, title: "Saregama Carvaan Mini Hindi Retro Portable Player", price: 2490, age: "seniors", occasion: "birthday", interests: ["tech", "home"], rating: 4.7, reviews: 14200, reason: "Pre-loaded with 351 evergreen retro songs in a compact, easy-to-use radio cabinet.", img: "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=500&q=80" },
+            { id: 416, title: "Theragun Relief Lightweight Percussion Massage Gun", price: 16999, age: "seniors", occasion: "graduation", interests: ["fitness", "home"], rating: 4.8, reviews: 1420, reason: "Ergonomic massage gun to relieve back and shoulder stiffness effortlessly.", img: "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=500&q=80" },
+            { id: 417, title: "Dr. Trust USA Finger Pulse Oximeter with OLED Display", price: 1299, age: "seniors", occasion: "birthday", interests: ["tech", "fitness"], rating: 4.6, reviews: 18900, reason: "Instant and accurate blood oxygen (SpO2) and pulse monitoring at home.", img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" },
+            { id: 418, title: "Agaro Royal Electric Heating Pad for Joint Pain", price: 799, age: "seniors", occasion: "birthday", interests: ["home", "fitness"], rating: 4.7, reviews: 9200, reason: "Provides soothing therapeutic heat for aching joints and back muscles.", img: "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=500&q=80" },
+            { id: 419, title: "Solimo Orthopedic Memory Foam Seat Cushion", price: 899, age: "seniors", occasion: "holiday", interests: ["home"], rating: 4.5, reviews: 11400, reason: "Relieves pressure on tailbone and lower back during armchair seating.", img: "https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=500&q=80" },
+            { id: 420, title: "Portronics My Buddy K Folding Laptop Table with Cup Holder", price: 1199, age: "seniors", occasion: "holiday", interests: ["home", "tech"], rating: 4.6, reviews: 21000, reason: "Convenient bedside or armchair tray for reading and tea in comfort.", img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" },
+            { id: 421, title: "Pantry Fresh Airtight Plastic Kitchen Storage Set", price: 1299, age: "seniors", occasion: "holiday", interests: ["home"], rating: 4.6, reviews: 16400, reason: "Easy-grip food jars with secure airtight seals for kitchen pantries.", img: "https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=80" },
+            { id: 422, title: "Florona Pure Essential Oils Aromatherapy Gift Set", price: 699, age: "seniors", occasion: "birthday", interests: ["home"], rating: 4.5, reviews: 3100, reason: "Calming lavender and aromatherapy oils for home diffusers.", img: "https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=500&q=80" },
+            { id: 423, title: "Nayasa Plastic Revolving Spice Rack Set", price: 999, age: "seniors", occasion: "holiday", interests: ["home"], rating: 4.6, reviews: 8400, reason: "Spinning spice tower that keeps cooking condiments within effortless reach.", img: "https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=80" },
+            { id: 424, title: "Ganesh 3-in-1 Vegetable & Fruit Dicer Slicer", price: 499, age: "seniors", occasion: "birthday", interests: ["home"], rating: 4.4, reviews: 34000, reason: "Effortless vegetable chopping that eliminates hand and wrist strain.", img: "https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=80" },
+            { id: 425, title: "Kuber Industries Velvet Jewel Box & Organizer Vanity", price: 799, age: "seniors", occasion: "anniversary", interests: ["home"], rating: 4.7, reviews: 4100, reason: "Secure velvet-lined storage case to safely organize heirlooms and bangles.", img: "https://images.unsplash.com/photo-1580301762395-21ce84d00bc6?auto=format&fit=crop&w=500&q=80" },
+            { id: 426, title: "Amazon Basics Anti-Fatigue Kitchen Floor Mat", price: 1899, age: "seniors", occasion: "holiday", interests: ["home"], rating: 4.6, reviews: 5200, reason: "Cushions feet and joints while standing during kitchen meal prep.", img: "https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=500&q=80" },
+            { id: 427, title: "BeatXP Sharp Rechargeable Deep Tissue Massage Gun", price: 2199, age: "seniors", occasion: "birthday", interests: ["fitness", "home"], rating: 4.6, reviews: 6800, reason: "Cordless percussion massager to relieve sore muscles and improve mobility.", img: "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=500&q=80" },
+            { id: 428, title: "Dr. Morepen Gluco One BG-03 Blood Glucose Monitor", price: 699, age: "seniors", occasion: "holiday", interests: ["tech", "fitness"], rating: 4.7, reviews: 29000, reason: "Accurate home blood sugar testing kit with simple digital readout.", img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=500&q=80" },
+            { id: 429, title: "Pavitra Handicrafts Wooden Folding Reading Stand", price: 649, age: "seniors", occasion: "birthday", interests: ["home", "creative"], rating: 4.8, reviews: 1950, reason: "Adjustable wooden bookholder to hold scriptures or books at eye level.", img: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=500&q=80" },
+            { id: 430, title: "Invento LED Magnifying Glass with Stand", price: 899, age: "seniors", occasion: "holiday", interests: ["creative", "home"], rating: 4.6, reviews: 2400, reason: "Hands-free illuminated magnifying lens for fine print reading and needlework.", img: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=500&q=80" }
+        ];
+
+        let targetAge = "adults";
+        let currentUser = null;
+        let cartArray = [];
+
+        // ==================== AUTHENTICATION & USER SESSION LOGIC ====================
+        function loadAuthState() {
+            const savedSession = localStorage.getItem('giftyai_current_user');
+            if (savedSession) {
+                currentUser = JSON.parse(savedSession);
+                const userShortlistKey = `giftyai_shortlist_${currentUser.email}`;
+                const savedUserCart = localStorage.getItem(userShortlistKey);
+                cartArray = savedUserCart ? JSON.parse(savedUserCart) : [];
+            } else {
+                currentUser = null;
+                const guestCart = localStorage.getItem('giftyai_shortlist_guest');
+                cartArray = guestCart ? JSON.parse(guestCart) : [];
+            }
+            updateAuthUI();
+            refreshCartDrawerUI();
+        }
+
+        function saveShortlistState() {
+            if (currentUser) {
+                localStorage.setItem(`giftyai_shortlist_${currentUser.email}`, JSON.stringify(cartArray));
+            } else {
+                localStorage.setItem('giftyai_shortlist_guest', JSON.stringify(cartArray));
+            }
+        }
+
+        function updateAuthUI() {
+            const loginBtn = document.getElementById('headerLoginBtn');
+            const userMenu = document.getElementById('headerUserMenu');
+            const syncBanner = document.getElementById('cartSyncBanner');
+
+            if (currentUser) {
+                loginBtn.classList.add('hidden');
+                userMenu.classList.remove('hidden');
+
+                const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+                document.getElementById('userAvatarInitials').innerText = initials || 'U';
+                document.getElementById('headerUserName').innerText = currentUser.name.split(' ')[0];
+                document.getElementById('dropdownUserFullName').innerText = currentUser.name;
+                document.getElementById('dropdownUserEmail').innerText = currentUser.email;
+
+                if (syncBanner) {
+                    syncBanner.innerHTML = `<span class="text-emerald-300 flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Synced to ${currentUser.email}</span>`;
+                }
+            } else {
+                loginBtn.classList.remove('hidden');
+                userMenu.classList.add('hidden');
+                if (syncBanner) {
+                    syncBanner.innerHTML = `<span>Sign in to save your shortlist permanently.</span><button onclick="toggleCartDrawer(false); openAuthModal('login');" class="font-bold underline cursor-pointer">Sign In</button>`;
+                }
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function openAuthModal(tab = 'login') {
+            document.getElementById('authErrorBox').classList.add('hidden');
+            switchAuthTab(tab);
+            document.getElementById('authModal').classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const signupForm = document.getElementById('signupForm');
+            const tabLoginBtn = document.getElementById('tabLoginBtn');
+            const tabSignupBtn = document.getElementById('tabSignupBtn');
+            document.getElementById('authErrorBox').classList.add('hidden');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                signupForm.classList.add('hidden');
+                tabLoginBtn.className = "py-2 rounded-lg text-xs font-bold transition cursor-pointer bg-indigo-600 text-white shadow";
+                tabSignupBtn.className = "py-2 rounded-lg text-xs font-bold transition cursor-pointer text-slate-400 hover:text-slate-200";
+            } else {
+                loginForm.classList.add('hidden');
+                signupForm.classList.remove('hidden');
+                tabSignupBtn.className = "py-2 rounded-lg text-xs font-bold transition cursor-pointer bg-indigo-600 text-white shadow";
+                tabLoginBtn.className = "py-2 rounded-lg text-xs font-bold transition cursor-pointer text-slate-400 hover:text-slate-200";
+            }
+        }
+
+        function togglePasswordVisibility(inputId) {
+            const field = document.getElementById(inputId);
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+
+        function fillDemoCredentials() {
+            document.getElementById('loginEmail').value = "demo@giftyai.in";
+            document.getElementById('loginPassword').value = "gifty123";
+        }
+
+        function showAuthError(msg) {
+            const errBox = document.getElementById('authErrorBox');
+            errBox.innerText = msg;
+            errBox.classList.remove('hidden');
+        }
+
+        function handleSignupSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+            const password = document.getElementById('signupPassword').value;
+
+            const usersDB = JSON.parse(localStorage.getItem('giftyai_users_db') || '[]');
+            if (usersDB.some(u => u.email === email)) {
+                showAuthError("An account with this email already exists. Please Sign In.");
+                return;
+            }
+
+            const newUser = { name, email, password };
+            usersDB.push(newUser);
+            localStorage.setItem('giftyai_users_db', JSON.stringify(usersDB));
+
+            const guestCart = JSON.parse(localStorage.getItem('giftyai_shortlist_guest') || '[]');
+            if (guestCart.length > 0) {
+                localStorage.setItem(`giftyai_shortlist_${email}`, JSON.stringify(guestCart));
+                localStorage.removeItem('giftyai_shortlist_guest');
+            }
+
+            currentUser = { name, email };
+            localStorage.setItem('giftyai_current_user', JSON.stringify(currentUser));
+            loadAuthState();
+            closeAuthModal();
+            showToast(`Welcome to GiftyAI, ${name.split(' ')[0]}!`);
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+
+            if (email === 'demo@giftyai.in' && password === 'gifty123') {
+                currentUser = { name: "Rohan Verma", email: "demo@giftyai.in" };
+                localStorage.setItem('giftyai_current_user', JSON.stringify(currentUser));
+                loadAuthState();
+                closeAuthModal();
+                showToast("Signed in as Demo User (Rohan)!");
+                return;
+            }
+
+            const usersDB = JSON.parse(localStorage.getItem('giftyai_users_db') || '[]');
+            const matchedUser = usersDB.find(u => u.email === email && u.password === password);
+
+            if (!matchedUser) {
+                showAuthError("Invalid email or password. Try 'Use Demo Account' or Create Account.");
+                return;
+            }
+
+            const guestCart = JSON.parse(localStorage.getItem('giftyai_shortlist_guest') || '[]');
+            if (guestCart.length > 0) {
+                const existingCart = JSON.parse(localStorage.getItem(`giftyai_shortlist_${email}`) || '[]');
+                localStorage.setItem(`giftyai_shortlist_${email}`, JSON.stringify([...existingCart, ...guestCart]));
+                localStorage.removeItem('giftyai_shortlist_guest');
+            }
+
+            currentUser = { name: matchedUser.name, email: matchedUser.email };
+            localStorage.setItem('giftyai_current_user', JSON.stringify(currentUser));
+            loadAuthState();
+            closeAuthModal();
+            showToast(`Welcome back, ${matchedUser.name.split(' ')[0]}!`);
+        }
+
+        function toggleUserDropdown() {
+            document.getElementById('userDropdownPanel').classList.toggle('hidden');
+        }
+
+        function handleLogout() {
+            document.getElementById('userDropdownPanel').classList.add('hidden');
+            currentUser = null;
+            localStorage.removeItem('giftyai_current_user');
+            loadAuthState();
+            showToast("Signed out successfully.");
+        }
+
+        function finalizeShortlistAction() {
+            if (!currentUser) {
+                toggleCartDrawer(false);
+                openAuthModal('login');
+                showToast("Please sign in to proceed with your gift order.");
+                return;
+            }
+            if (cartArray.length === 0) {
+                showToast("Your shortlist is empty! Add gifts first.");
+                return;
+            }
+            const totalAmt = cartArray.reduce((s, i) => s + i.price, 0).toLocaleString('en-IN');
+            alert(`Order confirmed for ${currentUser.name}!\n\nItems: ${cartArray.length}\nTotal Amount: ₹${totalAmt}\n\nThank you for shopping with GiftyAI!`);
+        }
+
+        function showToast(message) {
+            const toastElement = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toastElement.classList.remove('translate-y-24', 'opacity-0');
+            toastElement.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => { 
+                toastElement.classList.remove('translate-y-0', 'opacity-100');
+                toastElement.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        // ==================== RECOMMENDATION ENGINE & UI LOGIC ====================
+        function switchView(viewName) {
+            document.querySelectorAll('.view-section').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            ['finder', 'trending', 'learning'].forEach(name => {
+                const linkElement = document.getElementById(`nav-${name}`);
+                if (linkElement) {
+                    if (name === viewName) linkElement.className = "active-nav transition duration-200 cursor-pointer text-indigo-400";
+                    else linkElement.className = "hover:text-slate-200 transition duration-200 cursor-pointer text-slate-400";
+                }
+            });
+
+            if (viewName === 'trending') renderTrendingViewGrid();
+        }
+
+        function triggerEvaluation() {
+            const activeCeilingPrice = parseFloat(document.getElementById('budgetSlider').value);
+            const activeOccasion = document.getElementById('occasionField').value;
+            const chosenTags = Array.from(document.querySelectorAll('input[name="interestTag"]:checked')).map(cb => cb.value);
+
+            let fallbackLevel = 0;
+
+            let dataPassResults = masterProducts.filter(item => {
+                return item.age === targetAge && 
+                       item.price <= activeCeilingPrice && 
+                       (activeOccasion === 'all' || item.occasion === activeOccasion) &&
+                       (chosenTags.length === 0 || item.interests.some(t => chosenTags.includes(t)));
+            });
+
+            if (dataPassResults.length === 0) {
+                fallbackLevel = 1;
+                dataPassResults = masterProducts.filter(item => {
+                    return item.age === targetAge &&
+                           item.price <= activeCeilingPrice && 
+                           (chosenTags.length === 0 || item.interests.some(t => chosenTags.includes(t)));
+                });
+            }
+
+            if (dataPassResults.length === 0) {
+                fallbackLevel = 2;
+                dataPassResults = masterProducts.filter(item => {
+                    return item.age === targetAge && item.price <= activeCeilingPrice;
+                });
+            }
+
+            if (dataPassResults.length === 0) {
+                fallbackLevel = 3;
+                dataPassResults = masterProducts.filter(item => item.price <= activeCeilingPrice);
+            }
+
+            dataPassResults.sort((a, b) => b.rating - a.rating || b.price - a.price);
+
+            renderProductsToTargetGrid(dataPassResults, 'catalogGrid', fallbackLevel);
+        }
+
+        function renderProductsToTargetGrid(itemsArray, destinationGridElementId, fallbackLevel = 0) {
+            const gridTargetContainer = document.getElementById(destinationGridElementId);
+            if (!gridTargetContainer) return;
+            gridTargetContainer.innerHTML = '';
+            
+            if (destinationGridElementId === 'catalogGrid') {
+                const maxBudget = parseInt(document.getElementById('budgetSlider').value).toLocaleString('en-IN');
+                let modeNote = '';
+                if (fallbackLevel === 1) modeNote = ' (showing all occasions for this recipient & budget)';
+                else if (fallbackLevel === 2) modeNote = ' (broadened interest tags within budget)';
+                else if (fallbackLevel === 3) modeNote = ' (showing top gifts under your rupee limit)';
+
+                const summaryEl = document.getElementById('catalogSummary');
+                if (summaryEl) {
+                    summaryEl.innerText = `Found ${itemsArray.length} verified gifts under ₹${maxBudget}${modeNote}.`;
+                }
+            }
+
+            itemsArray.forEach(product => {
+                const elementCardNode = document.createElement('div');
+                elementCardNode.className = "bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl overflow-hidden hover:border-indigo-500/50 shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 flex flex-col justify-between group";
+                elementCardNode.innerHTML = `
+                    <div>
+                        <div class="relative aspect-video w-full bg-slate-900/60 overflow-hidden">
+                            <img src="${product.img}" alt="${product.title}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-200 flex items-center gap-1 border border-slate-800">
+                                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+                                <span>${product.rating} <span class="text-slate-500 font-medium">(${product.reviews.toLocaleString('en-IN')})</span></span>
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex flex-wrap gap-1.5 mb-2.5">
+                                <span class="bg-indigo-500/10 text-indigo-400 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border border-indigo-500/15 tracking-wider">${product.age}</span>
+                                <span class="bg-purple-500/10 text-purple-300 text-[9px] font-bold uppercase px-2 py-0.5 rounded border border-purple-500/15 tracking-wider">${product.occasion}</span>
+                                ${product.interests.map(i => `<span class="bg-slate-800/60 text-slate-400 text-[9px] font-bold uppercase px-2 py-0.5 rounded border border-slate-700/40">${i}</span>`).join('')}
+                            </div>
+                            <h4 class="font-bold text-slate-100 text-sm leading-snug group-hover:text-indigo-400 transition duration-200">${product.title}</h4>
+                            <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">${product.reason}</p>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-3 border-t border-slate-900/60 flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Est. Price</p>
+                            <span class="text-lg font-black text-white">₹${product.price.toLocaleString('en-IN')}</span>
+                        </div>
+                        <button onclick="commitProductToCart(${product.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 text-xs font-bold transition flex items-center gap-1.5 active:scale-95 shadow-lg shadow-indigo-600/10 cursor-pointer">
+                            <span>Shortlist Gift</span>
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                gridTargetContainer.appendChild(elementCardNode);
+            });
+
+            if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
+        }
+
+        function renderTrendingViewGrid() {
+            const eliteProducts = masterProducts
+                .filter(p => p.rating >= 4.8)
+                .sort((a, b) => b.reviews - a.reviews);
+            renderProductsToTargetGrid(eliteProducts, 'trendingGrid');
+        }
+
+        function toggleCartDrawer(open) {
+            const drawerNode = document.getElementById('cartDrawer');
+            if (open) {
+                refreshCartDrawerUI();
+                drawerNode.classList.remove('hidden');
+            } else {
+                drawerNode.classList.add('hidden');
+            }
+        }
+
+        function commitProductToCart(id) {
+            const chosenObj = masterProducts.find(x => x.id === id);
+            if (!chosenObj) return;
+
+            cartArray.push(chosenObj);
+            saveShortlistState();
+            refreshCartDrawerUI();
+            showToast(`Shortlisted "${chosenObj.title.substring(0, 26)}..."`);
+        }
+
+        function removeFromCart(index) {
+            cartArray.splice(index, 1);
+            saveShortlistState();
+            refreshCartDrawerUI();
+        }
+
+        function refreshCartDrawerUI() {
+            const listContainer = document.getElementById('cartItemsList');
+            const badge = document.getElementById('cartCountBadge');
+            const totalSumEl = document.getElementById('cartTotalSum');
+
+            if (cartArray.length > 0) {
+                badge.innerText = cartArray.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            const total = cartArray.reduce((sum, item) => sum + item.price, 0);
+            totalSumEl.innerText = `₹${total.toLocaleString('en-IN')}`;
+
+            if (cartArray.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">Your gift shortlist is currently empty.</p>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                return;
+            }
+
+            listContainer.innerHTML = cartArray.map((item, idx) => `
+                <div class="flex items-center justify-between gap-3 bg-slate-900/60 border border-slate-800/80 p-3 rounded-xl">
+                    <img src="${item.img}" alt="${item.title}" class="w-12 h-12 rounded-lg object-cover shrink-0">
+                    <div class="flex-grow min-w-0">
+                        <h5 class="text-xs font-bold text-slate-200 truncate">${item.title}</h5>
+                        <p class="text-xs font-extrabold text-indigo-400 mt-0.5">₹${item.price.toLocaleString('en-IN')}</p>
+                    </div>
+                    <button onclick="removeFromCart(${idx})" class="text-slate-500 hover:text-rose-400 p-1.5 transition cursor-pointer" title="Remove">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('headerUserMenu');
+            const panel = document.getElementById('userDropdownPanel');
+            if (menu && !menu.contains(e.target) && panel && !panel.classList.contains('hidden')) {
+                panel.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.age-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.age-btn').forEach(b => {
+                        b.className = "age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition cursor-pointer";
+                    });
+                    btn.className = "age-btn active-pill p-3 rounded-xl text-left text-xs transition cursor-pointer";
+                    targetAge = btn.getAttribute('data-age');
+                    triggerEvaluation();
+                });
+            });
+
+            document.getElementById('occasionField').addEventListener('change', triggerEvaluation);
+
+            const budgetSlider = document.getElementById('budgetSlider');
+            const priceLabel = document.getElementById('priceLabel');
+            budgetSlider.addEventListener('input', (e) => {
+                const formattedVal = parseInt(e.target.value).toLocaleString('en-IN');
+                priceLabel.innerText = `₹${formattedVal} Max`;
+                triggerEvaluation();
+            });
+
+            document.querySelectorAll('input[name="interestTag"]').forEach(cb => {
+                cb.addEventListener('change', triggerEvaluation);
+            });
+
+            document.getElementById('resetFilters').addEventListener('click', () => {
+                targetAge = "adults";
+                document.querySelectorAll('.age-btn').forEach(b => {
+                    if (b.getAttribute('data-age') === 'adults') {
+                        b.className = "age-btn active-pill p-3 rounded-xl text-left text-xs transition cursor-pointer";
+                    } else {
+                        b.className = "age-btn border border-slate-800 bg-slate-900/40 p-3 rounded-xl text-left text-xs font-medium hover:bg-slate-800/50 transition cursor-pointer";
+                    }
+                });
+                document.getElementById('occasionField').value = 'all';
+                budgetSlider.value = 35000;
+                priceLabel.innerText = '₹35,000 Max';
+                document.querySelectorAll('input[name="interestTag"]').forEach(cb => cb.checked = true);
+                triggerEvaluation();
+            });
+
+            loadAuthState();
+            triggerEvaluation();
+        });
+    </script>
+</body>
+</html>
