@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GiftyAI - Personalized Indian Gift Finder</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090d1b;color:#f8fafc;font-family:Arial,sans-serif}
+.gradient-text{background:linear-gradient(90deg,#c084fc,#67e8f9);-webkit-background-clip:text;color:transparent}
+.glass{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(14px)}
+.hero{background:linear-gradient(135deg,#17132e,#111d38,#102b39)}
+.primary-btn{background:linear-gradient(90deg,#9333ea,#2563eb);color:white;padding:12px 20px;border-radius:10px;font-weight:600;cursor:pointer}
+.primary-btn:hover{opacity:.85}
+.input-field,.filter-field{width:100%;padding:12px;background:#111827;border:1px solid #374151;border-radius:9px;color:white;outline:none}
+.input-field:focus,.filter-field:focus{border-color:#a855f7}
+.product-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:15px;overflow:hidden;transition:.25s}
+.product-card:hover{transform:translateY(-5px);border-color:#a855f7}
+.product-image{width:100%;height:175px;object-fit:cover;background:#1f2937}
+.hidden-page{display:none!important}
+.tab-btn{padding:10px 16px;border-radius:9px;color:#cbd5e1}
+.tab-btn.active{background:#7e22ce;color:white}
+.filter-section{margin-bottom:17px}
+.filter-section label{display:block;margin-bottom:7px;color:#cbd5e1;font-size:14px}
+.small-btn{padding:8px 12px;border:1px solid #475569;border-radius:8px;font-size:13px;cursor:pointer}
+.small-btn:hover{background:#7e22ce}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal-box{width:100%;max-width:450px;padding:25px;border-radius:18px;background:#111827;border:1px solid #374151}
+@media(max-width:640px){.product-image{height:145px}}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN AND SIGNUP -->
+<section id="authPage" class="min-h-screen flex items-center justify-center p-5 hero">
+<div class="glass rounded-2xl p-8 w-full max-w-md">
+    <div class="text-center mb-7">
+        <div class="text-4xl mb-3">🎁</div>
+        <h1 class="text-3xl font-bold gradient-text">GiftyAI</h1>
+        <p class="text-gray-400 mt-2">Find the perfect gift for everyone.</p>
+    </div>
+
+    <div class="flex gap-2 mb-6">
+        <button id="loginTab" class="tab-btn active flex-1" onclick="switchAuth('login')">Login</button>
+        <button id="signupTab" class="tab-btn flex-1" onclick="switchAuth('signup')">Sign Up</button>
+    </div>
+
+    <form id="authForm">
+        <div id="nameGroup" class="mb-4 hidden">
+            <label class="block text-sm mb-2">Full Name</label>
+            <input id="authName" class="input-field" type="text" placeholder="Enter your name">
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm mb-2">Email Address</label>
+            <input id="authEmail" class="input-field" type="email" placeholder="Enter email" required>
+        </div>
+
+        <div class="mb-5">
+            <label class="block text-sm mb-2">Password</label>
+            <input id="authPassword" class="input-field" type="password" placeholder="Minimum 6 characters" minlength="6" required>
+        </div>
+
+        <button id="authSubmit" type="submit" class="primary-btn w-full">Login</button>
+    </form>
+
+    <p id="authMessage" class="text-center text-sm mt-4 text-red-400"></p>
+    <p class="text-xs text-gray-500 text-center mt-5">Demo authentication using browser storage.</p>
+</div>
+</section>
+
+
+<!-- MAIN WEBSITE -->
+<div id="appPage" class="hidden-page">
+
+<nav class="border-b border-white/10 px-5 py-4">
+<div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+        <span class="text-3xl">🎁</span>
+        <span class="text-2xl font-bold gradient-text">GiftyAI</span>
+    </div>
+
+    <div class="flex items-center gap-3">
+        <span id="welcomeText" class="text-sm text-gray-300"></span>
+        <button onclick="showShortlist()" class="small-btn">♥ Shortlist <span id="shortlistCount">0</span></button>
+        <button onclick="logout()" class="small-btn">Logout</button>
+    </div>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="hero px-5 py-14 text-center">
+<div class="max-w-3xl mx-auto">
+    <span class="text-sm text-purple-300 uppercase tracking-widest">Your Personal Gift Assistant</span>
+    <h1 class="text-4xl md:text-5xl font-bold mt-4">Find the <span class="gradient-text">Perfect Gift</span></h1>
+    <p class="text-gray-300 mt-5 leading-7">Discover thoughtful and personalized gift ideas for your loved ones. Select your preferences and let GiftyAI help you find the perfect gift.</p>
+    <button onclick="document.getElementById('finder').scrollIntoView({behavior:'smooth'})" class="primary-btn mt-7">Explore Gifts</button>
+</div>
+</section>
+
+<!-- GIFT FINDER -->
+<main id="finder" class="max-w-7xl mx-auto px-5 py-12">
+<div class="mb-8">
+    <h2 class="text-3xl font-bold">Personalized Gift Finder</h2>
+    <p class="text-gray-400 mt-2">Choose your preferences to discover suitable gifts.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-7">
+
+<!-- FILTERS -->
+<aside class="glass rounded-xl p-5 h-fit">
+    <h3 class="text-xl font-semibold mb-5">Gift Preferences</h3>
+
+    <div class="filter-section">
+        <label for="recipient">Who is the gift for?</label>
+        <select id="recipient" class="filter-field">
+            <option value="all">Anyone</option>
+            <option>Friend</option>
+            <option>Mother</option>
+            <option>Father</option>
+            <option>Partner</option>
+            <option>Sibling</option>
+            <option>Colleague</option>
+            <option>Child</option>
+        </select>
+    </div>
+
+    <div class="filter-section">
+        <label for="occasion">Occasion</label>
+        <select id="occasion" class="filter-field">
+            <option value="all">Any Occasion</option>
+            <option>Birthday</option>
+            <option>Anniversary</option>
+            <option>Wedding</option>
+            <option>Festival</option>
+            <option>Graduation</option>
+            <option>Thank You</option>
+            <option>Just Because</option>
+        </select>
+    </div>
+
+    <div class="filter-section">
+        <label for="budget">Your Budget</label>
+        <select id="budget" class="filter-field">
+            <option value="all">Any Budget</option>
+            <option value="500">Below ₹500</option>
+            <option value="1000">₹500 – ₹1,000</option>
+            <option value="2000">₹1,000 – ₹2,000</option>
+            <option value="5000">₹2,000 – ₹5,000</option>
+            <option value="5001">Above ₹5,000</option>
+        </select>
+    </div>
+
+    <div class="filter-section">
+        <label for="interest">Interest / Preference</label>
+        <select id="interest" class="filter-field">
+            <option value="all">All Interests</option>
+            <option>Technology</option>
+            <option>Fashion</option>
+            <option>Beauty</option>
+            <option>Books</option>
+            <option>Home</option>
+            <option>Fitness</option>
+            <option>Personalized</option>
+            <option>Food</option>
+        </select>
+    </div>
+
+    <div class="filter-section">
+        <label for="giftSearch">Search Gifts</label>
+        <input id="giftSearch" class="filter-field" type="text" placeholder="Search gift name...">
+    </div>
+
+    <button onclick="triggerEvaluation()" class="primary-btn w-full">Find Gifts</button>
+    <button onclick="resetFilters()" class="small-btn w-full mt-3">Reset Filters</button>
+</aside>
+
+<!-- RESULTS -->
+<section class="lg:col-span-3">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-5">
+        <div>
+            <h3 class="text-2xl font-semibold">Recommended Gifts</h3>
+            <p id="resultCount" class="text-gray-400 text-sm mt-1"></p>
+        </div>
+
+        <select id="sortBy" class="filter-field max-w-48">
+            <option value="default">Recommended</option>
+            <option value="low">Price: Low to High</option>
+            <option value="high">Price: High to Low</option>
+        </select>
+    </div>
+
+    <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+
+    <div id="emptyMessage" class="hidden text-center py-16 glass rounded-xl">
+        <div class="text-5xl mb-4">🎁</div>
+        <h3 class="text-xl font-semibold">No gifts found</h3>
+        <p class="text-gray-400 mt-2">Try changing your preferences or budget.</p>
+    </div>
+</section>
+</div>
+</main>
+
+<!-- HOW IT WORKS -->
+<section class="border-t border-white/10 px-5 py-12">
+<div class="max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-10">How GiftyAI Works</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass p-6 rounded-xl text-center">
+            <div class="text-4xl mb-3">👤</div>
+            <h3 class="font-semibold text-lg">1. Select Preferences</h3>
+            <p class="text-gray-400 text-sm mt-2">Choose recipient, occasion, budget and interests.</p>
+        </div>
+        <div class="glass p-6 rounded-xl text-center">
+            <div class="text-4xl mb-3">✨</div>
+            <h3 class="font-semibold text-lg">2. Get Suggestions</h3>
+            <p class="text-gray-400 text-sm mt-2">Explore gift recommendations based on your choices.</p>
+        </div>
+        <div class="glass p-6 rounded-xl text-center">
+            <div class="text-4xl mb-3">💝</div>
+            <h3 class="font-semibold text-lg">3. Choose Your Gift</h3>
+            <p class="text-gray-400 text-sm mt-2">Save your favourite gifts in your shortlist.</p>
+        </div>
+    </div>
+</div>
+</section>
+
+<footer class="border-t border-white/10 text-center py-7 text-gray-500 text-sm">
+© 2026 GiftyAI. Personalized Indian Gift Finder.
+</footer>
+</div>
+
+
+<!-- SHORTLIST MODAL -->
+<div id="shortlistModal" class="modal-bg hidden-page">
+<div class="modal-box max-h-[85vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-5">
+        <h2 class="text-2xl font-bold">My Shortlist ♥</h2>
+        <button onclick="closeShortlist()" class="text-gray-400 text-2xl">&times;</button>
+    </div>
+    <div id="shortlistItems"></div>
+</div>
+</div>
+
+
+<script>
+
+/* AUTHENTICATION */
+
+let authMode = "login";
+
+function switchAuth(mode){
+    authMode = mode;
+    document.getElementById("loginTab").classList.toggle("active",mode==="login");
+    document.getElementById("signupTab").classList.toggle("active",mode==="signup");
+    document.getElementById("nameGroup").classList.toggle("hidden",mode!=="signup");
+    document.getElementById("authName").required = mode==="signup";
+    document.getElementById("authSubmit").textContent = mode==="login"?"Login":"Create Account";
+    document.getElementById("authMessage").textContent = "";
+}
+
+function getUsers(){
+    try{
+        return JSON.parse(localStorage.getItem("giftyUsers")) || {};
+    }catch(e){
+        return {};
+    }
+}
+
+document.getElementById("authForm").addEventListener("submit",function(e){
+    e.preventDefault();
+
+    const name=document.getElementById("authName").value.trim();
+    const email=document.getElementById("authEmail").value.trim().toLowerCase();
+    const password=document.getElementById("authPassword").value;
+    const message=document.getElementById("authMessage");
+    let users=getUsers();
+
+    if(password.length<6){
+        message.textContent="Password must contain at least 6 characters.";
+        return;
+    }
+
+    if(authMode==="signup"){
+        if(!name){
+            message.textContent="Please enter your name.";
+            return;
+        }
+
+        if(users[email]){
+            message.textContent="Email already registered. Please login.";
+            return;
+        }
+
+        users[email]={name:name,password:password};
+        localStorage.setItem("giftyUsers",JSON.stringify(users));
+        localStorage.setItem("giftySession",email);
+        openApp(name);
+
+    }else{
+        if(!users[email] || users[email].password!==password){
+            message.textContent="Invalid email or password.";
+            return;
+        }
+
+        localStorage.setItem("giftySession",email);
+        openApp(users[email].name);
+    }
+});
+
+function openApp(name){
+    document.getElementById("authPage").classList.add("hidden-page");
+    document.getElementById("appPage").classList.remove("hidden-page");
+    document.getElementById("welcomeText").textContent="Welcome, "+name;
+    triggerEvaluation();
+}
+
+function logout(){
+    localStorage.removeItem("giftySession");
+    document.getElementById("appPage").classList.add("hidden-page");
+    document.getElementById("authPage").classList.remove("hidden-page");
+    document.getElementById("authForm").reset();
+    switchAuth("login");
+}
+
+window.addEventListener("DOMContentLoaded",function(){
+    const email=localStorage.getItem("giftySession");
+    const users=getUsers();
+
+    if(email && users[email]){
+        openApp(users[email].name);
+    }
+});
+
+
+/* GIFT DATABASE - 48 RECOMMENDATIONS */
+
+const products=[
+
+{id:1,name:"Personalized Photo Frame",price:499,category:"Personalized",interest:"Personalized",recipients:["Friend","Mother","Father","Partner","Sibling"],occasions:["Birthday","Anniversary","Wedding","Just Because"],image:"https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600",description:"A beautiful frame for memorable moments."},
+
+{id:2,name:"Wireless Earbuds",price:1499,category:"Technology",interest:"Technology",recipients:["Friend","Partner","Sibling","Colleague"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=600",description:"Enjoy music with wireless convenience."},
+
+{id:3,name:"Skincare Gift Set",price:999,category:"Beauty",interest:"Beauty",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Festival"],image:"https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600",description:"A thoughtful self-care gift set."},
+
+{id:4,name:"Classic Wrist Watch",price:1999,category:"Fashion",interest:"Fashion",recipients:["Friend","Father","Partner","Colleague"],occasions:["Birthday","Anniversary","Graduation"],image:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",description:"A stylish accessory for everyday wear."},
+
+{id:5,name:"Inspirational Book Set",price:699,category:"Books",interest:"Books",recipients:["Friend","Father","Mother","Colleague"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600",description:"Books that inspire and encourage."},
+
+{id:6,name:"Decorative Table Lamp",price:1299,category:"Home",interest:"Home",recipients:["Friend","Mother","Partner","Colleague"],occasions:["Birthday","Wedding","Festival"],image:"https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600",description:"Add warmth and style to any room."},
+
+{id:7,name:"Fitness Smart Band",price:1799,category:"Technology",interest:"Fitness",recipients:["Friend","Father","Partner","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1557935728-e6d1eaabe558?w=600",description:"Track daily activity and fitness goals."},
+
+{id:8,name:"Chocolate Gift Hamper",price:599,category:"Food",interest:"Food",recipients:["Friend","Mother","Father","Partner","Colleague"],occasions:["Birthday","Anniversary","Festival","Thank You"],image:"https://images.unsplash.com/photo-1548907040-4d42bfc9f6f2?w=600",description:"A sweet surprise for someone special."},
+
+{id:9,name:"Personalized Coffee Mug",price:349,category:"Personalized",interest:"Personalized",recipients:["Friend","Mother","Father","Partner","Colleague"],occasions:["Birthday","Thank You","Just Because"],image:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=600",description:"A custom mug for everyday memories."},
+
+{id:10,name:"Leather Wallet",price:899,category:"Fashion",interest:"Fashion",recipients:["Father","Partner","Friend","Colleague"],occasions:["Birthday","Anniversary","Graduation"],image:"https://images.unsplash.com/photo-1627123424574-724758594e93?w=600",description:"A practical and elegant accessory."},
+
+{id:11,name:"Bluetooth Speaker",price:2499,category:"Technology",interest:"Technology",recipients:["Friend","Partner","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600",description:"Portable sound for music lovers."},
+
+{id:12,name:"Scented Candle Set",price:499,category:"Home",interest:"Home",recipients:["Friend","Mother","Partner","Colleague"],occasions:["Birthday","Anniversary","Festival","Thank You"],image:"https://images.unsplash.com/photo-1603006905003-be475563bc59?w=600",description:"Create a relaxing atmosphere at home."},
+
+{id:13,name:"Makeup Essentials Kit",price:1499,category:"Beauty",interest:"Beauty",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Festival"],image:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600",description:"A collection of everyday beauty essentials."},
+
+{id:14,name:"Yoga Mat",price:799,category:"Fitness",interest:"Fitness",recipients:["Friend","Mother","Father","Partner"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1592432678016-e910b452f9a2?w=600",description:"A useful gift for a healthy lifestyle."},
+
+{id:15,name:"Artificial Flower Bouquet",price:599,category:"Home",interest:"Home",recipients:["Friend","Mother","Partner"],occasions:["Birthday","Anniversary","Wedding","Festival"],image:"https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=600",description:"A beautiful decorative flower arrangement."},
+
+{id:16,name:"Customized Name Necklace",price:1199,category:"Personalized",interest:"Fashion",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Wedding"],image:"https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600",description:"A personal jewellery gift."},
+
+{id:17,name:"Travel Backpack",price:1599,category:"Fashion",interest:"Fashion",recipients:["Friend","Father","Partner","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600",description:"A practical backpack for everyday adventures."},
+
+{id:18,name:"Desk Organizer",price:399,category:"Home",interest:"Home",recipients:["Friend","Father","Colleague","Sibling"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600",description:"Keep a workspace neat and organized."},
+
+{id:19,name:"Premium Pen Set",price:699,category:"Fashion",interest:"Personalized",recipients:["Father","Colleague","Friend"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600",description:"An elegant writing set."},
+
+{id:20,name:"Mini Photo Album",price:299,category:"Personalized",interest:"Personalized",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Wedding"],image:"https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=600",description:"Preserve favourite memories."},
+
+{id:21,name:"Premium Tea Gift Box",price:899,category:"Food",interest:"Food",recipients:["Mother","Father","Friend","Colleague"],occasions:["Birthday","Festival","Thank You"],image:"https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600",description:"A selection of refreshing tea blends."},
+
+{id:22,name:"Kids Art Kit",price:549,category:"Books",interest:"Books",recipients:["Child","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600",description:"Encourage creativity through art."},
+
+{id:23,name:"Smart Table Clock",price:1899,category:"Technology",interest:"Technology",recipients:["Friend","Father","Colleague"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1508057198894-247b23fe5ade?w=600",description:"A modern addition to a desk."},
+
+{id:24,name:"Premium Gift Hamper",price:2999,category:"Food",interest:"Food",recipients:["Friend","Mother","Father","Partner","Colleague"],occasions:["Birthday","Anniversary","Wedding","Festival"],image:"https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=600",description:"A curated collection for special celebrations."},
+
+{id:25,name:"Smart LED Desk Lamp",price:899,category:"Technology",interest:"Technology",recipients:["Friend","Father","Colleague","Sibling"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600",description:"A modern lamp for studying and working."},
+
+{id:26,name:"Wireless Charging Pad",price:1299,category:"Technology",interest:"Technology",recipients:["Friend","Partner","Father","Colleague"],occasions:["Birthday","Graduation","Anniversary"],image:"https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600",description:"A convenient wireless charging accessory."},
+
+{id:27,name:"Mini Bluetooth Printer",price:2499,category:"Technology",interest:"Technology",recipients:["Friend","Sibling","Partner"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=600",description:"Print small photos and notes conveniently."},
+
+{id:28,name:"Smartphone Stand",price:399,category:"Technology",interest:"Technology",recipients:["Friend","Father","Colleague","Sibling"],occasions:["Birthday","Thank You","Just Because"],image:"https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=600",description:"A handy stand for phones and video calls."},
+
+{id:29,name:"Sunglasses",price:799,category:"Fashion",interest:"Fashion",recipients:["Friend","Partner","Sibling","Father"],occasions:["Birthday","Festival","Just Because"],image:"https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600",description:"Stylish sunglasses for everyday outfits."},
+
+{id:30,name:"Elegant Handbag",price:1999,category:"Fashion",interest:"Fashion",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Festival"],image:"https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600",description:"A fashionable handbag for daily use."},
+
+{id:31,name:"Perfume Gift Set",price:1499,category:"Beauty",interest:"Beauty",recipients:["Friend","Mother","Partner","Father"],occasions:["Birthday","Anniversary","Wedding"],image:"https://images.unsplash.com/photo-1541643600914-78b084683601?w=600",description:"A fragrance gift set for special occasions."},
+
+{id:32,name:"Makeup Brush Set",price:599,category:"Beauty",interest:"Beauty",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Festival","Thank You"],image:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600",description:"A useful collection of makeup brushes."},
+
+{id:33,name:"Luxury Bath Set",price:1199,category:"Beauty",interest:"Beauty",recipients:["Friend","Mother","Partner"],occasions:["Birthday","Anniversary","Festival"],image:"https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=600",description:"A relaxing collection of bath essentials."},
+
+{id:34,name:"Reading Journal",price:349,category:"Books",interest:"Books",recipients:["Friend","Mother","Sibling","Colleague"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1517842645767-c639042777db?w=600",description:"A journal to record favourite books and ideas."},
+
+{id:35,name:"Motivational Book Collection",price:999,category:"Books",interest:"Books",recipients:["Friend","Father","Mother","Colleague"],occasions:["Birthday","Graduation","Thank You"],image:"https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600",description:"An inspiring collection for personal growth."},
+
+{id:36,name:"Personalized Bookmarks",price:199,category:"Books",interest:"Personalized",recipients:["Friend","Sibling","Mother","Colleague"],occasions:["Birthday","Thank You","Just Because"],image:"https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=600",description:"Custom bookmarks for book lovers."},
+
+{id:37,name:"Indoor Plant Gift",price:499,category:"Home",interest:"Home",recipients:["Friend","Mother","Father","Colleague"],occasions:["Birthday","Wedding","Thank You","Festival"],image:"https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600",description:"A refreshing green addition to any room."},
+
+{id:38,name:"Decorative Wall Art",price:1499,category:"Home",interest:"Home",recipients:["Friend","Partner","Mother"],occasions:["Birthday","Anniversary","Wedding"],image:"https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=600",description:"Beautiful wall decor for a stylish home."},
+
+{id:39,name:"Ceramic Coffee Set",price:899,category:"Home",interest:"Home",recipients:["Friend","Mother","Father","Colleague"],occasions:["Birthday","Wedding","Thank You"],image:"https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=600",description:"A charming coffee set for everyday use."},
+
+{id:40,name:"Gym Workout Kit",price:1299,category:"Fitness",interest:"Fitness",recipients:["Friend","Partner","Father","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600",description:"Useful accessories for a fitness routine."},
+
+{id:41,name:"Resistance Band Set",price:499,category:"Fitness",interest:"Fitness",recipients:["Friend","Mother","Father","Partner"],occasions:["Birthday","Thank You","Just Because"],image:"https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600",description:"A compact exercise accessory for home workouts."},
+
+{id:42,name:"Personalized Photo Cushion",price:799,category:"Personalized",interest:"Personalized",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Wedding"],image:"https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=600",description:"A cushion featuring a favourite photograph."},
+
+{id:43,name:"Custom Name Keychain",price:249,category:"Personalized",interest:"Personalized",recipients:["Friend","Partner","Sibling","Colleague"],occasions:["Birthday","Thank You","Just Because"],image:"https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=600",description:"A small personalised keepsake."},
+
+{id:44,name:"Personalized Scrapbook",price:699,category:"Personalized",interest:"Personalized",recipients:["Friend","Mother","Partner","Sibling"],occasions:["Birthday","Anniversary","Wedding"],image:"https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=600",description:"A creative way to preserve special memories."},
+
+{id:45,name:"Dry Fruit Gift Box",price:799,category:"Food",interest:"Food",recipients:["Mother","Father","Friend","Colleague"],occasions:["Birthday","Festival","Wedding","Thank You"],image:"https://images.unsplash.com/photo-1599599810694-b5ac4dd2b8a1?w=600",description:"A thoughtful box of assorted dry fruits."},
+
+{id:46,name:"Gourmet Cookie Box",price:449,category:"Food",interest:"Food",recipients:["Friend","Partner","Sibling","Colleague"],occasions:["Birthday","Thank You","Just Because"],image:"https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=600",description:"A delicious selection of assorted cookies."},
+
+{id:47,name:"Kids Building Blocks",price:999,category:"Books",interest:"Books",recipients:["Child","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600",description:"A fun building set that encourages creativity."},
+
+{id:48,name:"Personalized Kids Water Bottle",price:399,category:"Personalized",interest:"Personalized",recipients:["Child","Sibling"],occasions:["Birthday","Graduation","Just Because"],image:"https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=600",description:"A reusable bottle with a personalized touch."}
+
+];
+
+
+/* FILTER AND RECOMMENDATIONS */
+
+function triggerEvaluation(){
+
+    const recipient=document.getElementById("recipient").value;
+    const occasion=document.getElementById("occasion").value;
+    const budget=document.getElementById("budget").value;
+    const interest=document.getElementById("interest").value;
+    const search=document.getElementById("giftSearch").value.toLowerCase().trim();
+
+    let results=products.filter(function(product){
+
+        const matchesRecipient=recipient==="all" || product.recipients.includes(recipient);
+        const matchesOccasion=occasion==="all" || product.occasions.includes(occasion);
+
+        const matchesInterest=interest==="all" ||
+            product.interest===interest || product.category===interest;
+
+        const matchesSearch=product.name.toLowerCase().includes(search) ||
+            product.description.toLowerCase().includes(search) ||
+            product.category.toLowerCase().includes(search);
+
+        let matchesBudget=true;
+
+        if(budget==="500") matchesBudget=product.price<500;
+        else if(budget==="1000") matchesBudget=product.price>=500 && product.price<=1000;
+        else if(budget==="2000") matchesBudget=product.price>1000 && product.price<=2000;
+        else if(budget==="5000") matchesBudget=product.price>2000 && product.price<=5000;
+        else if(budget==="5001") matchesBudget=product.price>5000;
+
+        return matchesRecipient && matchesOccasion && matchesInterest && matchesSearch && matchesBudget;
+    });
+
+    const sort=document.getElementById("sortBy").value;
+
+    if(sort==="low") results.sort((a,b)=>a.price-b.price);
+    if(sort==="high") results.sort((a,b)=>b.price-a.price);
+
+    renderProducts(results);
+}
+
+
+/* DISPLAY PRODUCTS */
+
+function renderProducts(items){
+
+    const grid=document.getElementById("catalogGrid");
+    grid.innerHTML="";
+
+    document.getElementById("resultCount").textContent=items.length+" gift(s) found";
+    document.getElementById("emptyMessage").classList.toggle("hidden",items.length!==0);
+
+    items.forEach(function(product){
+
+        const saved=getShortlist().includes(product.id);
+        const card=document.createElement("div");
+        card.className="product-card";
+
+        card.innerHTML=`
+            <img src="${product.image}" alt="${product.name}" class="product-image"
+            onerror="this.src='https://placehold.co/600x400/1f2937/ffffff?text=Gift+Image'">
+
+            <div class="p-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-purple-300">${product.category}</span>
+                    <button onclick="toggleShortlist(${product.id})" class="text-2xl"
+                    title="Add to shortlist">${saved?"♥":"♡"}</button>
+                </div>
+
+                <h3 class="font-semibold text-lg mt-2">${product.name}</h3>
+                <p class="text-sm text-gray-400 mt-2 min-h-10">${product.description}</p>
+
+                <div class="flex justify-between items-center mt-4 gap-2">
+                    <span class="text-xl font-bold text-purple-300">₹${product.price.toLocaleString("en-IN")}</span>
+                    <button onclick="showProductDetails(${product.id})" class="small-btn">View Details</button>
+                </div>
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+
+    updateShortlistCount();
+}
+
+
+/* SHORTLIST */
+
+function getShortlist(){
+    try{
+        return JSON.parse(localStorage.getItem("giftyShortlist")) || [];
+    }catch(e){
+        return [];
+    }
+}
+
+function saveShortlist(list){
+    localStorage.setItem("giftyShortlist",JSON.stringify(list));
+    updateShortlistCount();
+}
+
+function toggleShortlist(id){
+    let list=getShortlist();
+
+    if(list.includes(id)){
+        list=list.filter(item=>item!==id);
+    }else{
+        list.push(id);
+    }
+
+    saveShortlist(list);
+    triggerEvaluation();
+}
+
+function updateShortlistCount(){
+    document.getElementById("shortlistCount").textContent=getShortlist().length;
+}
+
+function showShortlist(){
+
+    const container=document.getElementById("shortlistItems");
+    const savedIds=getShortlist();
+    const savedProducts=products.filter(p=>savedIds.includes(p.id));
+
+    container.innerHTML="";
+
+    if(savedProducts.length===0){
+        container.innerHTML='<p class="text-gray-400 text-center py-8">You have not saved any gifts yet.</p>';
+    }else{
+
+        savedProducts.forEach(function(product){
+
+            const item=document.createElement("div");
+            item.className="flex justify-between items-center gap-3 border-b border-gray-700 py-4";
+
+            item.innerHTML=`
+                <div>
+                    <h3 class="font-semibold">${product.name}</h3>
+                    <p class="text-purple-300 text-sm">₹${product.price.toLocaleString("en-IN")}</p>
+                </div>
+                <button class="small-btn" onclick="toggleShortlist(${product.id});showShortlist();">Remove</button>
+            `;
+
+            container.appendChild(item);
+        });
+    }
+
+    document.getElementById("shortlistModal").classList.remove("hidden-page");
+}
+
+function closeShortlist(){
+    document.getElementById("shortlistModal").classList.add("hidden-page");
+}
+
+
+/* PRODUCT DETAILS */
+
+function showProductDetails(id){
+
+    const product=products.find(p=>p.id===id);
+    if(!product)return;
+
+    alert(
+        product.name+"\n\n"+
+        product.description+"\n\n"+
+        "Price: ₹"+product.price.toLocaleString("en-IN")+"\n"+
+        "Category: "+product.category+"\n"+
+        "Suitable for: "+product.recipients.join(", ")+"\n"+
+        "Occasions: "+product.occasions.join(", ")
+    );
+}
+
+
+/* RESET FILTERS AND EVENTS */
+
+function resetFilters(){
+
+    document.getElementById("recipient").value="all";
+    document.getElementById("occasion").value="all";
+    document.getElementById("budget").value="all";
+    document.getElementById("interest").value="all";
+    document.getElementById("giftSearch").value="";
+    document.getElementById("sortBy").value="default";
+
+    triggerEvaluation();
+}
+
+["recipient","occasion","budget","interest","sortBy"].forEach(function(id){
+    document.getElementById(id).addEventListener("change",triggerEvaluation);
+});
+
+document.getElementById("giftSearch").addEventListener("input",triggerEvaluation);
+
+updateShortlistCount();
+
+</script>
+</body>
+</html>
